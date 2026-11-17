@@ -1,0 +1,30 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+publish/
+AppPackages/
+BundleArtifacts/
+*.msix
+*.msixbundle
+*.appx
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userprefs
+*.DotSettings.user
+
+# Test results
+TestResults/
+*.trx
+coverage*.xml
+
+# Local scratch PDFs (never commit documents you don't own)
+scratch/
+*.local.pdf

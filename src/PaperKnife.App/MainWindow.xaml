@@ -1,0 +1,140 @@
+<Window
+    x:Class="PaperKnife.App.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="PaperKnife">
+
+  <Grid x:Name="Root" AllowDrop="True" DragOver="Root_DragOver" Drop="Root_Drop" Loaded="Root_Loaded">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <CommandBar Grid.Row="0" HorizontalAlignment="Left" DefaultLabelPosition="Right" IsDynamicOverflowEnabled="True">
+      <AppBarButton x:Name="OpenButton" Icon="OpenFile" Label="Open" Click="Open_Click" ToolTipService.ToolTip="Open a PDF (Ctrl+O)">
+        <AppBarButton.KeyboardAccelerators>
+          <KeyboardAccelerator Modifiers="Control" Key="O" />
+        </AppBarButton.KeyboardAccelerators>
+      </AppBarButton>
+      <AppBarButton x:Name="SaveButton" Icon="Save" Label="Save as" Click="SaveAs_Click" ToolTipService.ToolTip="Save a copy (Ctrl+S)">
+        <AppBarButton.KeyboardAccelerators>
+          <KeyboardAccelerator Modifiers="Control" Key="S" />
+        </AppBarButton.KeyboardAccelerators>
+      </AppBarButton>
+      <AppBarSeparator />
+      <AppBarButton x:Name="UndoButton" Icon="Undo" Label="Undo" Click="Undo_Click" ToolTipService.ToolTip="Undo (Ctrl+Z)">
+        <AppBarButton.KeyboardAccelerators>
+          <KeyboardAccelerator Modifiers="Control" Key="Z" />
+        </AppBarButton.KeyboardAccelerators>
+      </AppBarButton>
+      <AppBarButton x:Name="RedoButton" Icon="Redo" Label="Redo" Click="Redo_Click" ToolTipService.ToolTip="Redo (Ctrl+Y)">
+        <AppBarButton.KeyboardAccelerators>
+          <KeyboardAccelerator Modifiers="Control" Key="Y" />
+        </AppBarButton.KeyboardAccelerators>
+      </AppBarButton>
+      <AppBarSeparator />
+      <AppBarButton x:Name="RotateButton" Icon="Rotate" Label="Rotate page" Click="Rotate_Click" />
+      <AppBarButton x:Name="DeletePageButton" Icon="Delete" Label="Delete page" Click="DeletePage_Click" />
+      <AppBarButton x:Name="AppendButton" Icon="Add" Label="Add pages from PDF" Click="Append_Click" />
+      <AppBarSeparator />
+      <AppBarButton x:Name="ZoomOutButton" Icon="ZoomOut" Label="Zoom out" Click="ZoomOut_Click" />
+      <AppBarButton x:Name="ZoomInButton" Icon="ZoomIn" Label="Zoom in" Click="ZoomIn_Click" />
+    </CommandBar>
+
+    <InfoBar x:Name="Banner" Grid.Row="1" Margin="12,0,12,8" IsOpen="False" IsClosable="True" />
+
+    <StackPanel
+        x:Name="EmptyState"
+        Grid.Row="2"
+        MaxWidth="440"
+        HorizontalAlignment="Center"
+        VerticalAlignment="Center"
+        Spacing="12">
+      <TextBlock HorizontalAlignment="Center" Style="{StaticResource TitleLargeTextBlockStyle}" Text="PaperKnife" />
+      <TextBlock
+          HorizontalAlignment="Center"
+          Style="{StaticResource BodyTextBlockStyle}"
+          Text="Edit PDFs on this device. Your files are never uploaded."
+          TextAlignment="Center"
+          TextWrapping="Wrap" />
+      <Button HorizontalAlignment="Center" Click="Open_Click" Content="Open a PDF" Style="{StaticResource AccentButtonStyle}" />
+      <TextBlock HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="or drop a PDF here" />
+    </StackPanel>
+
+    <Grid x:Name="Workspace" Grid.Row="2" Visibility="Collapsed">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="140" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="360" />
+      </Grid.ColumnDefinitions>
+
+      <ListView
+          x:Name="PageList"
+          Grid.Column="0"
+          AutomationProperties.Name="Pages"
+          SelectionChanged="PageList_SelectionChanged"
+          SelectionMode="Single" />
+
+      <ScrollViewer
+          Grid.Column="1"
+          Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+          HorizontalScrollBarVisibility="Auto"
+          HorizontalScrollMode="Auto"
+          VerticalScrollBarVisibility="Auto">
+        <Grid Margin="24" HorizontalAlignment="Center" VerticalAlignment="Top">
+          <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+            <Image x:Name="PageImage" AutomationProperties.Name="Page" PointerPressed="PageImage_PointerPressed" Stretch="Fill" />
+          </Border>
+          <Canvas x:Name="Overlay" Margin="1" IsHitTestVisible="False">
+            <Rectangle
+                x:Name="SelectionBox"
+                Fill="#220078D4"
+                RadiusX="2"
+                RadiusY="2"
+                Stroke="{ThemeResource AccentFillColorDefaultBrush}"
+                StrokeThickness="2"
+                Visibility="Collapsed" />
+          </Canvas>
+        </Grid>
+      </ScrollViewer>
+
+      <ScrollViewer Grid.Column="2" Padding="16,4,16,16">
+        <StackPanel Spacing="12">
+          <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Edit text" />
+          <InfoBar x:Name="PageBlockedBar" Title="Editing is off on this page" IsClosable="False" IsOpen="False" Severity="Warning" />
+          <TextBlock x:Name="EditHint" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+          <TextBox
+              x:Name="EditBox"
+              Header="Selected text"
+              IsEnabled="False"
+              KeyDown="EditBox_KeyDown"
+              TextChanged="EditBox_TextChanged" />
+          <TextBlock x:Name="FontInfo" Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button x:Name="ApplyButton" Click="Apply_Click" Content="Apply" IsEnabled="False" Style="{StaticResource AccentButtonStyle}" />
+            <Button x:Name="ResetButton" Click="Reset_Click" Content="Reset" IsEnabled="False" />
+          </StackPanel>
+          <TextBlock
+              Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+              Style="{StaticResource CaptionTextBlockStyle}"
+              Text="PaperKnife changes only the selected text. After every edit it re-reads the saved result and compares the whole page; if anything else would change, the edit is cancelled."
+              TextWrapping="Wrap" />
+          <TextBlock Margin="0,8,0,0" Style="{StaticResource BodyStrongTextBlockStyle}" Text="Text on this page" />
+          <ListView
+              x:Name="RunList"
+              MaxHeight="360"
+              AutomationProperties.Name="Text on this page"
+              SelectionChanged="RunList_SelectionChanged"
+              SelectionMode="Single" />
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+
+    <Grid Grid.Row="3" Padding="12,6" Background="{ThemeResource LayerFillColorDefaultBrush}">
+      <TextBlock x:Name="StatusText" VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" />
+      <ProgressBar x:Name="BusyBar" Width="160" HorizontalAlignment="Right" IsIndeterminate="True" Visibility="Collapsed" />
+    </Grid>
+  </Grid>
+</Window>

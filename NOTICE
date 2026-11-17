@@ -1,0 +1,13 @@
+PaperKnife for Windows
+Copyright (c) The PaperKnife Authors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes PDFium (https://pdfium.googlesource.com/pdfium/),
+Copyright 2014 The PDFium Authors, distributed as prebuilt binaries by
+https://github.com/bblanchon/pdfium-binaries. PDFium bundles further
+third-party components; see THIRD_PARTY_NOTICES.md and
+third_party/pdfium/licenses/ for their notices and license texts.
+
+Portions of this software are copyright (c) The FreeType Project
+(https://freetype.org). All rights reserved.

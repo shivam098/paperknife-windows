@@ -1,0 +1,62 @@
+# PaperKnife for Windows — roadmap
+
+Milestones are ordered by value to users and by risk. Each milestone ends with a usable app.
+
+## M0 — Foundation ✅
+
+- Repository, Apache-2.0 license, third-party notices, CI on x64 and Arm64.
+- `PaperKnife.Core`: PDFium bindings, immutable document snapshots, transactional edits with
+  verification (character support, round trip, object counts, pixel comparison of the page with
+  the edited text hidden), PDF permission rules, undo/redo, rotate/delete/move pages, append
+  documents, merge and extract (engine only), atomic save.
+- WinUI 3 app: open (picker, drag and drop, command line, passwords), page view and zoom, select
+  text by clicking or from a list, edit and verify, undo/redo, page commands, save as,
+  unsaved-changes prompt.
+- Tests that generate their own PDFs, including cases PaperKnife must refuse.
+
+## M1 — A dependable everyday editor
+
+- Page thumbnails, continuous scrolling, fit to width or page, keyboard navigation.
+- Drag to reorder pages; extract, split and merge in the UI (the engine already supports them).
+- Find text (Ctrl+F).
+- Show and fill form fields.
+- Recent files, file association and *Open with*.
+- MSIX packaging and code signing; releases on GitHub; a winget manifest.
+- A real-world test corpus, generated with common producers (Word, LibreOffice, browsers, LaTeX)
+  using openly licensed fonts, and a report of how much of it can be edited.
+- Accessibility review with Narrator, keyboard only and high contrast.
+
+## M2 — Better editing
+
+- **Surgical content editing.** Replace only the drawing instruction that was edited and keep
+  every other byte of the page. This removes the current limits that come from PDFium rewriting
+  whole pages (letter and word spacing, print colors, inline images, shadings, Type 3 fonts). Candidate
+  building blocks: our own content-stream tokenizer plus an object-level writer such as PDFsharp
+  (MIT) or the qpdf C API (Apache-2.0).
+- **Fallback fonts with consent.** When the document's font lacks a character, offer to use a
+  similar installed font, embedding only the glyphs used and only if the font's license allows
+  embedding.
+- Edit whole lines and paragraphs (grouping runs and reflowing inside the original area).
+- Delete text, add text boxes, images and signature images.
+- Annotations: highlight, underline, notes, ink and shapes.
+
+## M3 — Toolbox
+
+- Compress (downsample and recompress images, with a preview of the quality).
+- Images to PDF and PDF to images.
+- Watermarks, page numbers, headers and footers.
+- Password protect and unlock (qpdf).
+- True redaction that removes content instead of covering it.
+
+## M4 — Scanned documents
+
+- Recognize text offline (Windows OCR or Tesseract) and make scanned PDFs searchable.
+- Research: editing recognized text while matching the scanned appearance.
+
+## Throughout
+
+- **Security:** move PDFium into a separate low-privilege process so a malicious PDF can't reach
+  the user's files; fuzz the engine with the corpus.
+- **Performance:** load large files without reading them fully into memory, cache renderings,
+  and keep undo affordable for very large documents.
+- **Localization:** starting with English and Hindi.
