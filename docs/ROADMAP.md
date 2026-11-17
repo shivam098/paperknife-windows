@@ -20,8 +20,11 @@ Milestones are ordered by value to users and by risk. Each milestone ends with a
 - Drag to reorder pages; extract, split and merge in the UI (the engine already supports them).
 - Find text (Ctrl+F).
 - Show and fill form fields.
-- Recent files, file association and *Open with*.
-- MSIX packaging and code signing; releases on GitHub; a winget manifest.
+- Recent files.
+- ✅ *Open with* and Default apps registration, added by the installer.
+- ✅ Releases on GitHub: one installer for x64 and Arm64 that needs no administrator rights,
+  plus portable ZIPs, built by CI from a tag. Still to do: code signing, a winget manifest and a
+  Microsoft Store listing.
 - A real-world test corpus, generated with common producers (Word, LibreOffice, browsers, LaTeX)
   using openly licensed fonts, and a report of how much of it can be edited.
 - Accessibility review with Narrator, keyboard only and high contrast.

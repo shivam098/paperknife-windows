@@ -1,3 +1,5 @@
+<img src="docs/images/paperknife-icon.png" alt="PaperKnife icon" width="96" align="right">
+
 # PaperKnife for Windows
 
 **Edit PDFs on your own computer — honestly.** PaperKnife is a free, open-source, offline PDF
@@ -5,8 +7,31 @@ editor. Your documents never leave your device: no uploads, no account, no telem
 
 ![PaperKnife after editing a line of text: the change is verified before it is kept](docs/images/edit-verified.png)
 
-> **Status: early development (milestone M0).** The engine and a first editor work, with rough
+> **Status: early preview (version 0.1).** The engine and a first editor work, with rough
 > edges. Keep a backup of any document you can't afford to lose.
+
+## Download
+
+Get the latest version from the
+**[Releases page](https://github.com/shivam098/paperknife-windows/releases/latest)**. PaperKnife
+runs on Windows 10 (version 1809) or later and Windows 11, on any 64-bit PC: Intel, AMD or Arm.
+Nothing else needs to be installed.
+
+| File | Choose it if |
+|---|---|
+| `PaperKnife-<version>-setup.exe` | You want PaperKnife in the Start menu and in **Open with** for PDFs. One installer for every 64-bit PC. |
+| `PaperKnife-<version>-x64-portable.zip` | You'd rather not install anything, on an Intel or AMD PC: unzip and run `PaperKnife.exe`. |
+| `PaperKnife-<version>-arm64-portable.zip` | The same, on an Arm PC (for example Snapdragon). |
+
+- **No administrator rights needed.** The installer installs PaperKnife for your account only.
+  To remove it, uninstall it from *Settings > Apps*.
+- **"Windows protected your PC"?** Releases aren't code-signed yet, so Microsoft Defender
+  SmartScreen warns about them. Select **More info**, then **Run anyway**. If Smart App Control is
+  turned on, it may block PaperKnife until releases are signed.
+- **Check a download** by comparing `Get-FileHash <file>` with `SHA256SUMS.txt` on the release
+  page.
+- **Make it your PDF app:** right-click a PDF, choose **Open with > Choose another app**, select
+  PaperKnife and **Always**.
 
 ## What works today
 
@@ -59,7 +84,9 @@ dotnet run --project src/PaperKnife.App -- C:\path\to\file.pdf                  
 ```
 
 The app builds for your PC's architecture by default; pass `-r win-x64` or `-r win-arm64` to
-choose. The first build downloads the Windows App SDK (several hundred megabytes).
+choose. The first build downloads the Windows App SDK (several hundred megabytes). To build the
+installer and portable ZIPs yourself, run `pwsh build/package.ps1 -Version 0.1.0`; see
+[CONTRIBUTING.md](CONTRIBUTING.md#releasing).
 
 ## Repository layout
 
@@ -68,7 +95,9 @@ choose. The first build downloads the Windows App SDK (several hundred megabytes
 | `src/PaperKnife.Core` | The engine: PDFium bindings, documents, verified edits, undo history. No UI code. |
 | `src/PaperKnife.App` | The WinUI 3 desktop app. |
 | `tests/PaperKnife.Core.Tests` | Engine tests. They generate their own PDFs, so the repo contains no third-party documents. |
-| `docs/` | [Product principles](docs/PRODUCT.md), [roadmap](docs/ROADMAP.md), [architecture](docs/ARCHITECTURE.md). |
+| `build/`, `installer/` | Release packaging: the build script and the Inno Setup installer script. |
+| `third_party/` | License and notice texts of the components shipped with the app. |
+| `docs/` | [Product principles](docs/PRODUCT.md), [roadmap](docs/ROADMAP.md), [architecture](docs/ARCHITECTURE.md), [release notes](docs/releases/). |
 
 ## Other platforms
 

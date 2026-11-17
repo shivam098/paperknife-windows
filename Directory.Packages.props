@@ -5,7 +5,8 @@
   <ItemGroup>
     <!-- PDF engine: PDFium (chromium/8152), prebuilt without V8/XFA by bblanchon/pdfium-binaries -->
     <PackageVersion Include="bblanchon.PDFium.Win32" Version="159.0.8152" />
-    <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.6.5" />
+    <!-- WinUI component only; the Microsoft.WindowsAppSDK meta-package would also ship unused AI/ML runtimes (~40 MB). -->
+    <PackageVersion Include="Microsoft.WindowsAppSDK.WinUI" Version="2.6.5" />
     <PackageVersion Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2957" />
     <PackageVersion Include="xunit.v3" Version="4.0.3" />
   </ItemGroup>

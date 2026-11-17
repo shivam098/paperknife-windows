@@ -12,7 +12,7 @@ flowchart LR
 | Project | Responsibility |
 |---|---|
 | `PaperKnife.Core` | Everything about PDFs. Targets `net10.0`, has no UI dependencies, and keeps all native calls internal. |
-| `PaperKnife.App` | WinUI 3 (Windows App SDK 2.6), unpackaged and self-contained for development. Talks only to `DocumentSession`. |
+| `PaperKnife.App` | WinUI 3 (the WinUI component of Windows App SDK 2.6), unpackaged and self-contained, so the same app folder runs from a build, a ZIP or the installer. Talks only to `DocumentSession`. |
 | `PaperKnife.Core.Tests` | Tests that build their PDFs at run time, either through PDFium or as hand-written PDF syntax. |
 
 ## The PDF engine
@@ -175,4 +175,5 @@ low-privilege process is on the roadmap.
 | WinUI 3 rather than WPF | Microsoft's recommended UI framework for new desktop apps; native on Arm64; builds with the .NET SDK alone. |
 | PDFium rather than MuPDF | Permissive license compatible with Apache-2.0 and app stores; mature rendering. |
 | Whole-document snapshots for undo | Exact undo with simple code. Large documents pay in memory and time; incremental history is planned. |
-| Unpackaged, self-contained Windows App SDK | Runs from the build folder without installing a runtime; MSIX packaging comes in M1. |
+| Unpackaged, self-contained app with an Inno Setup installer | Nothing else to install (.NET and the Windows App SDK runtime are included), installs per user without administrator rights, and one installer serves x64 and Arm64. An MSIX package for the Microsoft Store can come later. |
+| The `Microsoft.WindowsAppSDK.WinUI` component rather than the `Microsoft.WindowsAppSDK` meta-package | The meta-package also ships AI and machine-learning runtimes (about 40 MB per architecture) that PaperKnife doesn't use. |

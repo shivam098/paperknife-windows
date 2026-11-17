@@ -6,12 +6,17 @@
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <RootNamespace>PaperKnife.App</RootNamespace>
     <AssemblyName>PaperKnife</AssemblyName>
+    <ApplicationIcon>Assets\PaperKnife.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
     <UseWinUI>true</UseWinUI>
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <!-- Without this, publishing an unpackaged WinUI app leaves out its .pri resources and compiled XAML. -->
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <!-- CsWinRT's optional IID optimizer needs an x64 .NET 6 runtime, which Arm64 build machines usually lack; skip it so every build is the same. -->
+    <CsWinRTIIDOptimizerOptOut>true</CsWinRTIIDOptimizerOptOut>
   </PropertyGroup>
 
   <!-- Build for the machine's own architecture unless a runtime identifier is given. -->
@@ -21,7 +26,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.WindowsAppSDK" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
   </ItemGroup>
 
@@ -29,10 +34,18 @@
     <ProjectReference Include="..\PaperKnife.Core\PaperKnife.Core.csproj" />
   </ItemGroup>
 
-  <!-- Ship license texts next to the app. -->
+  <ItemGroup>
+    <Content Include="Assets\PaperKnife.ico" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Ship license texts next to the app, including those of every redistributed component. -->
   <ItemGroup>
     <None Include="..\..\LICENSE;..\..\NOTICE;..\..\THIRD_PARTY_NOTICES.md" Link="licenses\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\third_party\pdfium\licenses\**\*" Link="licenses\pdfium\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\third_party\dotnet\licenses\**\*" Link="licenses\dotnet\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\third_party\windowsappsdk\licenses\**\*" Link="licenses\windowsappsdk\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\third_party\webview2\licenses\**\*" Link="licenses\webview2\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\third_party\cswinrt\licenses\**\*" Link="licenses\cswinrt\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

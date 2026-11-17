@@ -1,0 +1,58 @@
+name: Release
+
+# Pushing a tag such as v0.2.0 publishes a GitHub release with the installer, the portable ZIPs
+# and their checksums. Running the workflow by hand only builds the files, as a downloadable
+# artifact.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Package
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Test the engine
+        run: dotnet test --project tests/PaperKnife.Core.Tests/PaperKnife.Core.Tests.csproj -c Release
+
+      - name: Build the installer and portable ZIPs
+        shell: pwsh
+        env:
+          VERSION: ${{ github.event_name == 'push' && github.ref_type == 'tag' && github.ref_name || '0.0.0-dev' }}
+        run: ./build/package.ps1 -Version $env:VERSION
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: paperknife-windows-release
+          path: artifacts/release/
+          if-no-files-found: error
+
+      - name: Publish the GitHub release
+        # Only for pushed tags: a manual run, even on a tag, must never publish.
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          $files = (Get-ChildItem artifacts/release -File).FullName
+          $ghArgs = @('release', 'create', $env:TAG) + $files + @(
+            '--title', "PaperKnife for Windows $($env:TAG.TrimStart('v'))", '--verify-tag')
+          $notes = "docs/releases/$env:TAG.md"
+          if (Test-Path $notes) { $ghArgs += @('--notes-file', $notes) } else { $ghArgs += '--generate-notes' }
+          if ($env:TAG.Contains('-')) { $ghArgs += '--prerelease' }
+          gh @ghArgs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

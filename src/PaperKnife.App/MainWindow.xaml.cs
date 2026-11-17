@@ -42,6 +42,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "PaperKnife.ico"));
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1400, 900));
         AppWindow.Closing += AppWindow_Closing;
         UpdateChrome();
