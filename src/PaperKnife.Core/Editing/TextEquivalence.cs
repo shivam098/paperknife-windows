@@ -16,6 +16,15 @@ internal static class TextEquivalence
     public static bool AreEquivalent(string a, string b) =>
         string.Equals(Normalize(a), Normalize(b), StringComparison.Ordinal);
 
+    /// <summary>
+    /// Like <see cref="AreEquivalent"/>, but ignores how much whitespace separates words and any at
+    /// the ends. PDFium's text extraction skips text objects that draw only spaces and reports gaps
+    /// as single generated spaces, so the spacing of rewritten text can't be read back exactly.
+    /// Every space is checked to be drawable before it is written (see <see cref="TextSupport"/>).
+    /// </summary>
+    public static bool AreEquivalentIgnoringSpacing(string a, string b) =>
+        string.Equals(CollapseSpaces(Normalize(a)), CollapseSpaces(Normalize(b)), StringComparison.Ordinal);
+
     public static string Normalize(string text)
     {
         var normalized = text.Normalize(NormalizationForm.FormC);
@@ -38,4 +47,7 @@ internal static class TextEquivalence
             .Distinct()
             .ToList();
     }
+
+    private static string CollapseSpaces(string text) =>
+        string.Join(' ', text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 }

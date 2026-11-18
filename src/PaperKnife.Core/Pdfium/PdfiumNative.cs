@@ -25,6 +25,16 @@ internal struct FsMatrix
     public float F;
 }
 
+/// <summary>PDFium's <c>FS_RECTF</c>. Note the field order: left, top, right, bottom.</summary>
+[StructLayout(LayoutKind.Sequential)]
+internal struct FsRectF
+{
+    public float Left;
+    public float Top;
+    public float Right;
+    public float Bottom;
+}
+
 /// <summary>
 /// The subset of the PDFium C API that PaperKnife uses, matching the headers shipped in
 /// bblanchon.PDFium.Win32 159.0.8152 (chromium/8152). PDFium is not thread-safe: call these only
@@ -82,6 +92,7 @@ internal static unsafe partial class PdfiumNative
     [LibraryImport(Library)] public static partial void FPDF_RenderPageBitmap(nint bitmap, nint page, int startX, int startY, int sizeX, int sizeY, int rotate, int flags);
     [LibraryImport(Library)] public static partial int FPDF_DeviceToPage(nint page, int startX, int startY, int sizeX, int sizeY, int rotate, int deviceX, int deviceY, double* pageX, double* pageY);
     [LibraryImport(Library)] public static partial int FPDF_PageToDevice(nint page, int startX, int startY, int sizeX, int sizeY, int rotate, double pageX, double pageY, int* deviceX, int* deviceY);
+    [LibraryImport(Library)] public static partial int FPDF_GetPageBoundingBox(nint page, FsRectF* rect);
 
     // fpdf_save.h
     [LibraryImport(Library)] public static partial int FPDF_SaveAsCopy(nint document, FpdfFileWrite* fileWrite, uint flags);
@@ -94,6 +105,8 @@ internal static unsafe partial class PdfiumNative
     [LibraryImport(Library)] public static partial int FPDFPage_GetRotation(nint page);
     [LibraryImport(Library)] public static partial void FPDFPage_SetRotation(nint page, int rotate);
     [LibraryImport(Library)] public static partial int FPDFPage_InsertObject(nint page, nint pageObject);
+    [LibraryImport(Library)] public static partial int FPDFPage_RemoveObject(nint page, nint pageObject);
+    [LibraryImport(Library)] public static partial void FPDFPageObj_Destroy(nint pageObject);
     [LibraryImport(Library)] public static partial int FPDFPage_CountObjects(nint page);
     [LibraryImport(Library)] public static partial nint FPDFPage_GetObject(nint page, int index);
     [LibraryImport(Library)] public static partial int FPDFPage_GenerateContent(nint page);
@@ -103,6 +116,10 @@ internal static unsafe partial class PdfiumNative
     [LibraryImport(Library)] public static partial int FPDFPageObj_GetMatrix(nint pageObject, FsMatrix* matrix);
     [LibraryImport(Library)] public static partial void FPDFPageObj_Transform(nint pageObject, double a, double b, double c, double d, double e, double f);
     [LibraryImport(Library)] public static partial int FPDFPageObj_SetFillColor(nint pageObject, uint r, uint g, uint b, uint a);
+    [LibraryImport(Library)] public static partial int FPDFPageObj_GetFillColor(nint pageObject, uint* r, uint* g, uint* b, uint* a);
+    [LibraryImport(Library)] public static partial int FPDFPageObj_GetStrokeColor(nint pageObject, uint* r, uint* g, uint* b, uint* a);
+    [LibraryImport(Library)] public static partial int FPDFPageObj_CountMarks(nint pageObject);
+    [LibraryImport(Library)] public static partial int FPDFPageObj_GetMarkedContentID(nint pageObject);
     [LibraryImport(Library)] public static partial nint FPDFPageObj_CreateNewRect(float x, float y, float width, float height);
     [LibraryImport(Library)] public static partial int FPDFPath_SetDrawMode(nint path, int fillMode, int stroke);
     [LibraryImport(Library)] public static partial nint FPDFPageObj_NewTextObj(nint document, byte* font, float fontSize);
@@ -122,10 +139,25 @@ internal static unsafe partial class PdfiumNative
     [LibraryImport(Library)] public static partial nint FPDFGlyphPath_GetGlyphPathSegment(nint glyphPath, int index);
     [LibraryImport(Library)] public static partial int FPDFPathSegment_GetPoint(nint segment, float* x, float* y);
     [LibraryImport(Library)] public static partial int FPDFPathSegment_GetType(nint segment);
+    [LibraryImport(Library)] public static partial int FPDFPathSegment_GetClose(nint segment);
+
+    // fpdf_transformpage.h
+    [LibraryImport(Library)] public static partial nint FPDFPageObj_GetClipPath(nint pageObject);
+    [LibraryImport(Library)] public static partial int FPDFClipPath_CountPaths(nint clipPath);
+    [LibraryImport(Library)] public static partial int FPDFClipPath_CountPathSegments(nint clipPath, int pathIndex);
+    [LibraryImport(Library)] public static partial nint FPDFClipPath_GetPathSegment(nint clipPath, int pathIndex, int segmentIndex);
+    [LibraryImport(Library)] public static partial void FPDFPageObj_TransformClipPath(nint pageObject, double a, double b, double c, double d, double e, double f);
 
     // fpdf_text.h
     [LibraryImport(Library)] public static partial nint FPDFText_LoadPage(nint page);
     [LibraryImport(Library)] public static partial void FPDFText_ClosePage(nint textPage);
+    [LibraryImport(Library)] public static partial int FPDFText_CountChars(nint textPage);
+    [LibraryImport(Library)] public static partial uint FPDFText_GetUnicode(nint textPage, int index);
+    [LibraryImport(Library)] public static partial int FPDFText_IsGenerated(nint textPage, int index);
+    [LibraryImport(Library)] public static partial nint FPDFText_GetTextObject(nint textPage, int index);
+    [LibraryImport(Library)] public static partial int FPDFText_GetCharOrigin(nint textPage, int index, double* x, double* y);
+    [LibraryImport(Library)] public static partial int FPDFText_GetCharBox(nint textPage, int index, double* left, double* right, double* bottom, double* top);
+    [LibraryImport(Library)] public static partial int FPDFText_GetLooseCharBox(nint textPage, int index, FsRectF* rect);
 
     // fpdf_ppo.h
     [LibraryImport(Library)] public static partial int FPDF_ImportPagesByIndex(nint destDocument, nint sourceDocument, int* pageIndices, uint length, int index);

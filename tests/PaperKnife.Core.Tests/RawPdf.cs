@@ -4,7 +4,9 @@ namespace PaperKnife.Core.Tests;
 
 /// <summary>
 /// Hand-written single-page PDFs (uncompressed, Latin-1) for content that PDFium can't create
-/// itself, such as inline images, shadings and character spacing.
+/// itself, such as inline images, shadings and character spacing. <c>/F1</c> is Helvetica;
+/// <c>/F2</c> is Helvetica in which code 66 also draws the glyph "A", with a wider advance (1000)
+/// than code 65 (667), so a glyph's Unicode value doesn't tell its width.
 /// </summary>
 internal static class RawPdf
 {
@@ -30,11 +32,14 @@ internal static class RawPdf
             "<< /Type /Catalog /Pages 2 0 R >>",
             "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
             "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R " +
-                "/Resources << /Font << /F1 5 0 R >> /Shading << /Sh1 6 0 R >> >> >>",
+                "/Resources << /Font << /F1 5 0 R /F2 7 0 R >> /Shading << /Sh1 6 0 R >> >> >>",
             $"<< /Length {Encoding.Latin1.GetByteCount(content)} >>\nstream\n{content}\nendstream",
             "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
             "<< /ShadingType 2 /ColorSpace /DeviceRGB /Coords [300 0 500 0] /Extend [true true] " +
                 "/Function << /FunctionType 2 /Domain [0 1] /C0 [1 0 0] /C1 [0 0 1] /N 1 >> >>",
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /FirstChar 65 /LastChar 68 " +
+                "/Widths [667 1000 722 722] " +
+                "/Encoding << /Type /Encoding /BaseEncoding /WinAnsiEncoding /Differences [66 /A] >> >>",
         ];
 
         var pdf = new StringBuilder("%PDF-1.7\n%\u00E2\u00E3\u00CF\u00D3\n");

@@ -39,7 +39,9 @@ Milestones are ordered by value to users and by risk. Each milestone ends with a
 - **Fallback fonts with consent.** When the document's font lacks a character, offer to use a
   similar installed font, embedding only the glyphs used and only if the font's license allows
   embedding.
-- Edit whole lines and paragraphs (grouping runs and reflowing inside the original area).
+- ✅ Edit whole lines in PDFs that draw text one character or word at a time: consecutive text
+  objects are grouped into runs, only the changed characters are rewritten and the rest of the
+  line moves to fit. Still to do: paragraphs, and reflowing inside the original area.
 - Delete text, add text boxes, images and signature images.
 - Annotations: highlight, underline, notes, ink and shapes.
 

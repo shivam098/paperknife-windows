@@ -185,10 +185,12 @@ public sealed class DocumentSession : IDisposable
     }
 
     /// <summary>
-    /// Replaces the text of one text run, keeping its font, size, position and color. Trailing
-    /// whitespace is dropped: it is invisible, and a character the font can't draw there would be
-    /// impossible to detect.
+    /// Replaces the text of a run, keeping its font, size, position and color. Only the text
+    /// objects whose characters change are rewritten; the rest of the run keeps its characters and
+    /// moves along the baseline to make room. Trailing whitespace is dropped: it is invisible, and
+    /// a character the font can't draw there would be impossible to detect.
     /// </summary>
+    /// <param name="objectIndex">Any page object of the run, normally <see cref="PdfTextRun.ObjectIndex"/>.</param>
     public EditResult ReplaceText(int pageIndex, int objectIndex, string newText)
     {
         ArgumentNullException.ThrowIfNull(newText);
@@ -202,15 +204,16 @@ public sealed class DocumentSession : IDisposable
             }
 
             var page = _document.GetPage(pageIndex);
-            var original = page.TryGetTextRun(objectIndex);
-            if (original is null)
+            var layout = page.GetRunLayout(objectIndex);
+            if (layout is null)
             {
                 return EditResult.Rejected(EditRejection.InvalidTarget, "The selected text no longer exists. Select it again.");
             }
 
+            var original = layout.Run;
             if (text.Length == 0)
             {
-                return EditResult.Rejected(EditRejection.EmptyText, "Type at least one character. Deleting text isn't supported yet.");
+                return EditResult.Rejected(EditRejection.EmptyText, "Type at least one character. Deleting a whole line of text isn't supported yet.");
             }
 
             if (TextEquivalence.AreEquivalent(text, original.Text))
@@ -229,49 +232,49 @@ public sealed class DocumentSession : IDisposable
                 return EditResult.Rejected(EditRejection.PageNotEditable, blockers[0]);
             }
 
-            var support = TextSupport.Check(page.GetTextFont(objectIndex), original.FontName, text);
-            if (!support.IsSupported)
+            var edit = TextRunEdit.Plan([.. layout.Pieces.Select(p => p.Text)], layout.Separators, text);
+            if (edit.Last + 1 < layout.Pieces.Count && !layout.Pieces[edit.Last].IsEndKnown)
             {
-                return EditResult.Rejected(EditRejection.UnsupportedCharacters, support.Problem!, support.Characters);
+                return EditResult.Rejected(EditRejection.PageNotEditable, "PaperKnife can't measure exactly where this part of the line ends, so it can't move the rest of the line to fit.");
+            }
+
+            if (edit.NewText.Length > 0)
+            {
+                var support = TextSupport.Check(layout.Pieces[edit.First].Font, original.FontName, edit.NewText);
+                if (!support.IsSupported)
+                {
+                    return EditResult.Rejected(EditRejection.UnsupportedCharacters, support.Problem!, support.Characters);
+                }
             }
 
             var pageCount = _document.PageCount;
             var countsBefore = page.CountObjects();
             var (width, height) = EditVerifier.CheckSize(page.Width, page.Height);
-            var rewriteProblem = CheckRewriteKeepsAppearance(pageIndex, objectIndex, page.Render(width, height));
+            var runObjects = layout.Pieces.Select(p => p.ObjectIndex).ToList();
+            var rewriteProblem = CheckRewriteKeepsAppearance(pageIndex, runObjects, page.Render(width, height));
             if (rewriteProblem is not null)
             {
                 return EditResult.Rejected(EditRejection.PageNotEditable, rewriteProblem);
             }
 
-            var before = RenderWithoutObject(_current, pageIndex, objectIndex, width, height);
-
             PdfSnapshot candidate;
+            RunChange change;
             using (var scratch = PdfDocument.Load(_current, _password))
             {
-                var scratchPage = scratch.GetPage(pageIndex);
-                var textObject = scratchPage.GetTextObject(objectIndex);
-                if (textObject == 0 || !scratchPage.SetText(textObject, text))
+                var failure = ApplyRunEdit(scratch.GetPage(pageIndex), layout, edit, out change);
+                if (failure is not null)
                 {
-                    return EditResult.Rejected(EditRejection.EngineError, "PDFium couldn't change this text.");
-                }
-
-                var stored = scratchPage.ReadText(textObject);
-                if (!TextEquivalence.AreEquivalent(stored, text))
-                {
-                    return EditResult.Rejected(
-                        EditRejection.UnsupportedCharacters,
-                        $"The font “{original.FontName}” in this PDF can't represent some of these characters.",
-                        TextEquivalence.Lost(text, stored));
+                    return failure;
                 }
 
                 candidate = scratch.Save();
             }
 
+            var before = RenderWithoutObjects(_current, pageIndex, change.HiddenBefore, width, height);
             PdfDocument? verified = PdfDocument.Load(candidate, _password);
             try
             {
-                var problem = VerifyTextEdit(verified, candidate, pageCount, original, text, countsBefore, before, out var edited, out var warnings);
+                var problem = VerifyTextEdit(verified, candidate, pageCount, change, countsBefore, before, out var edited, out var warnings);
                 if (problem is not null)
                 {
                     return EditResult.Rejected(EditRejection.CollateralChange, problem);
@@ -279,7 +282,10 @@ public sealed class DocumentSession : IDisposable
 
                 Commit(candidate, verified);
                 verified = null;
-                return EditResult.Applied("Text updated. Verified: nothing else on this page changed.", warnings, edited);
+                var message = change.MovedRest
+                    ? "Text updated, and the rest of the line moved to fit. Verified: nothing else on this page changed."
+                    : "Text updated. Verified: nothing else on this page changed.";
+                return EditResult.Applied(message, warnings, edited);
             }
             finally
             {
@@ -476,12 +482,87 @@ public sealed class DocumentSession : IDisposable
         }
     }
 
+    /// <summary>
+    /// Applies a planned edit to the scratch copy of a page: the first changed object takes the new
+    /// text, the other changed objects are removed, and the objects after them move along the
+    /// baseline by however much longer or shorter the new text is, so the rest of the run keeps its
+    /// spacing.
+    /// </summary>
+    private static EditResult? ApplyRunEdit(PdfPage page, TextRunLayout layout, TextRunEdit edit, out RunChange change)
+    {
+        change = null!;
+        var pieces = layout.Pieces;
+        var first = pieces[edit.First];
+        var keepsFirst = edit.NewText.Length > 0;
+        var start = layout.DistanceAlongBaseline(first.Matrix.E, first.Matrix.F);
+        var end = start;
+        var trimmedEnd = start;
+        if (keepsFirst)
+        {
+            var textObject = page.GetTextObject(first.ObjectIndex);
+            if (textObject == 0 || !page.SetText(textObject, edit.NewText))
+            {
+                return EditResult.Rejected(EditRejection.EngineError, "PDFium couldn't change this text.");
+            }
+
+            // PDFium sets new text without kerning, one advance width after another.
+            end = start + page.MeasureText(first.ObjectIndex, edit.NewText);
+            trimmedEnd = start + page.MeasureText(first.ObjectIndex, edit.NewText.TrimEnd());
+        }
+
+        // Remove from the end, so the indexes of the objects still to remove stay valid.
+        var firstRemoved = keepsFirst ? edit.First + 1 : edit.First;
+        for (var i = edit.Last; i >= firstRemoved; i--)
+        {
+            if (!page.RemoveObject(pieces[i].ObjectIndex))
+            {
+                return EditResult.Rejected(EditRejection.EngineError, "PDFium couldn't change this text.");
+            }
+        }
+
+        var removed = edit.Last - firstRemoved + 1;
+        var rest = pieces.Skip(edit.Last + 1).ToList();
+        var delta = end - layout.EndAlongBaseline(pieces[edit.Last]);
+        var moves = rest.Count > 0 && Math.Abs(delta) > first.FontSize * 1e-3;
+        var (dx, dy) = moves ? (delta * first.Matrix.A, delta * first.Matrix.B) : (0d, 0d);
+        foreach (var piece in moves ? rest : [])
+        {
+            if (!page.TranslateObject(piece.ObjectIndex - removed, dx, dy))
+            {
+                return EditResult.Rejected(EditRejection.EngineError, "PDFium couldn't move the rest of the line.");
+            }
+        }
+
+        if (edit.NewText.Trim().Length > 0)
+        {
+            // FPDFText_SetText silently turns characters it can't encode into character code 0.
+            var stored = page.GetTextLayout().Pieces.FirstOrDefault(p => p.ObjectIndex == first.ObjectIndex);
+            if (stored is null || !TextEquivalence.AreEquivalentIgnoringSpacing(stored.Text, edit.NewText))
+            {
+                return EditResult.Rejected(
+                    EditRejection.UnsupportedCharacters,
+                    $"The font “{layout.Run.FontName}” in this PDF can't represent some of these characters.",
+                    TextEquivalence.Lost(edit.NewText, stored?.Text ?? string.Empty));
+            }
+        }
+
+        var hiddenBefore = pieces.Skip(edit.First).Take(edit.Last - edit.First + 1).Select(p => p.ObjectIndex).ToList();
+        var hiddenAfter = keepsFirst ? new List<int> { first.ObjectIndex } : [];
+        if (moves)
+        {
+            hiddenBefore.AddRange(rest.Select(p => p.ObjectIndex));
+            hiddenAfter.AddRange(rest.Select(p => p.ObjectIndex - removed));
+        }
+
+        change = new RunChange(layout, edit, removed, dx, dy, end, trimmedEnd, hiddenBefore, hiddenAfter);
+        return null;
+    }
+
     private string? VerifyTextEdit(
         PdfDocument verified,
         PdfSnapshot candidate,
         int pageCount,
-        PdfTextRun original,
-        string newText,
+        RunChange change,
         PageObjectCounts countsBefore,
         RenderedBitmap before,
         out PdfTextRun? edited,
@@ -494,31 +575,82 @@ public sealed class DocumentSession : IDisposable
             return "Saving changed the number of pages, so the edit was cancelled.";
         }
 
+        var original = change.Layout.Run;
         var page = verified.GetPage(original.PageIndex);
+        var expected = countsBefore with { Text = countsBefore.Text - change.Removed };
         var countsAfter = page.CountObjects();
-        if (countsAfter != countsBefore)
+        if (countsAfter != expected)
         {
-            return $"Rewriting this page would drop or alter other content ({countsBefore} before; {countsAfter} after), so the edit was cancelled.";
+            return $"Rewriting this page would drop or alter other content ({expected} expected; {countsAfter} after), so the edit was cancelled.";
         }
 
-        edited = page.TryGetTextRun(original.ObjectIndex);
-        if (edited is null || !TextEquivalence.AreEquivalent(edited.Text, newText))
+        var (pieces, runs) = page.GetTextLayout();
+        var byIndex = pieces.ToDictionary(p => p.ObjectIndex);
+        var edit = change.Edit;
+        var originalPieces = change.Layout.Pieces;
+        var rest = originalPieces.Skip(edit.Last + 1).ToList();
+        if (edit.NewText.Trim().Length > 0)
         {
-            return "The new text didn't survive saving, so the edit was cancelled.";
+            if (!byIndex.TryGetValue(originalPieces[edit.First].ObjectIndex, out var stored)
+                || !TextEquivalence.AreEquivalentIgnoringSpacing(stored.Text, edit.NewText))
+            {
+                return "The new text didn't survive saving, so the edit was cancelled.";
+            }
+
+            // The rest of the run was placed after the advance widths of the new text, so PDFium
+            // must lay it out that way. Checked here, not in memory: saving drops character and
+            // word spacing. PDFium may or may not report the object's trailing spaces.
+            var storedEnd = change.Layout.EndAlongBaseline(stored);
+            var tolerance = originalPieces[edit.First].FontSize * 0.01;
+            if (rest.Count > 0 && Math.Abs(storedEnd - change.End) > tolerance && Math.Abs(storedEnd - change.TrimmedEnd) > tolerance)
+            {
+                return "PDFium laid out the new text differently than expected, so the edit was cancelled.";
+            }
         }
 
-        // Hide the edited run in both versions and compare the entire page, so content around,
+        var visible = page.GetVisibleBox();
+        foreach (var piece in rest)
+        {
+            // Spaces drawn on their own have no characters to compare; their position is checked.
+            if (!byIndex.TryGetValue(piece.ObjectIndex - change.Removed, out var moved)
+                || moved.HasCharacters != piece.HasCharacters
+                || (piece.HasCharacters && !TextEquivalence.AreEquivalent(moved.Text, piece.Text))
+                || Math.Abs(moved.Matrix.E - (piece.Matrix.E + change.ShiftX)) > 0.01
+                || Math.Abs(moved.Matrix.F - (piece.Matrix.F + change.ShiftY)) > 0.01)
+            {
+                return "The rest of the line didn't survive saving, so the edit was cancelled.";
+            }
+
+            if (piece.HasCharacters && piece.Bounds is { } from && moved.Bounds is { } to && SticksOutFurther(from, to, visible))
+            {
+                return "Moving the rest of the line would push part of it off the page, so the edit was cancelled.";
+            }
+        }
+
+        if (change.MovedRest
+            && !MovedTextKeepsItsClipping(original.PageIndex, [.. rest.Select(p => p.ObjectIndex)], change.ShiftX, change.ShiftY, before.Width, before.Height))
+        {
+            return "Moving the rest of the line would change how much of it shows, because the PDF clips it to an area, so the edit was cancelled.";
+        }
+
+        // Hide the changed objects in both versions and compare the entire page, so content around,
         // under and over the edited text is checked too.
-        var after = RenderWithoutObject(candidate, original.PageIndex, original.ObjectIndex, before.Width, before.Height);
+        var after = RenderWithoutObjects(candidate, original.PageIndex, change.HiddenAfter, before.Width, before.Height);
         var changed = EditVerifier.CountChangedPixels(before, after);
         if (changed > 0)
         {
             return $"This edit would also change {changed:N0} pixels elsewhere on the page (PDFium can't rewrite some spacing, shading or images exactly), so it was cancelled.";
         }
 
-        foreach (var other in page.GetTextRuns())
+        edited = runs.FirstOrDefault(r => r.Contains(original.ObjectIndex))?.Run;
+        if (edited is null)
         {
-            if (other.ObjectIndex != original.ObjectIndex && !other.IsInvisible
+            return "The new text didn't survive saving, so the edit was cancelled.";
+        }
+
+        foreach (var other in runs.Select(r => r.Run))
+        {
+            if (other.ObjectIndex != edited.ObjectIndex && !other.IsInvisible
                 && other.Bounds.Intersects(edited.Bounds) && !other.Bounds.Intersects(original.Bounds))
             {
                 warnings.Add("The new text now overlaps nearby text. Undo if that isn't what you want.");
@@ -627,14 +759,17 @@ public sealed class DocumentSession : IDisposable
         }
     }
 
-    /// <summary>Renders a page of a snapshot with one object hidden. The hidden state is never saved.</summary>
-    private RenderedBitmap RenderWithoutObject(PdfSnapshot snapshot, int pageIndex, int objectIndex, int width, int height)
+    /// <summary>Renders a page of a snapshot with some objects hidden. The hidden state is never saved.</summary>
+    private RenderedBitmap RenderWithoutObjects(PdfSnapshot snapshot, int pageIndex, IReadOnlyList<int> objectIndexes, int width, int height)
     {
         using var document = PdfDocument.Load(snapshot, _password);
         var page = document.GetPage(pageIndex);
-        if (!page.SetObjectActive(objectIndex, active: false))
+        foreach (var objectIndex in objectIndexes)
         {
-            throw new PdfException(PdfErrorCode.OperationFailed, "PDFium couldn't hide the edited text to verify the page.");
+            if (!page.SetObjectActive(objectIndex, active: false))
+            {
+                throw new PdfException(PdfErrorCode.OperationFailed, "PDFium couldn't hide the edited text to verify the page.");
+            }
         }
 
         return page.Render(width, height);
@@ -645,12 +780,13 @@ public sealed class DocumentSession : IDisposable
     /// covers the edited text's own styling (letter and word spacing, print colors), which the
     /// after-edit comparison can't see because it hides that text.
     /// </summary>
-    private string? CheckRewriteKeepsAppearance(int pageIndex, int objectIndex, RenderedBitmap original)
+    private string? CheckRewriteKeepsAppearance(int pageIndex, IReadOnlyList<int> objectIndexes, RenderedBitmap original)
     {
         PdfSnapshot rewritten;
         using (var probe = PdfDocument.Load(_current, _password))
         {
-            if (!probe.GetPage(pageIndex).MarkObjectModified(objectIndex))
+            var page = probe.GetPage(pageIndex);
+            if (!objectIndexes.All(page.MarkObjectModified))
             {
                 return "PDFium couldn't prepare this text for editing.";
             }
@@ -665,6 +801,50 @@ public sealed class DocumentSession : IDisposable
             : "PaperKnife can't rewrite this page without changing how it looks (for example letter spacing, print colors or small embedded images), so its text can't be edited yet.";
     }
 
+    /// <summary>
+    /// Whether moving the rest of a run leaves its clipping unchanged. Moving a text object doesn't
+    /// move its clipping path, so moved text could be cut off at the edge of a clipped area, or text
+    /// that was cut off could appear. On a copy of the original page, the objects are moved and
+    /// rendered on their own, then rendered again with their clipping paths moved along with them;
+    /// both must cover the same pixels. One copy keeps the glyph positions identical, and it keeps
+    /// the clipping paths as saved: PDFium drops a rectangular clipping path when it loads a page
+    /// in which the path contains its object. Comparing coverage rather than color catches white text.
+    /// </summary>
+    /// <param name="moved">The moved objects' indexes in the original page.</param>
+    private bool MovedTextKeepsItsClipping(int pageIndex, IReadOnlyList<int> moved, double dx, double dy, int width, int height)
+    {
+        using var document = PdfDocument.Load(_current, _password);
+        var page = document.GetPage(pageIndex);
+        if (!moved.Any(page.HasClipPath))
+        {
+            return true;
+        }
+
+        page.ShowOnly(moved);
+        if (!moved.All(i => page.TranslateObject(i, dx, dy)))
+        {
+            return false;
+        }
+
+        var clipped = page.RenderOnTransparent(width, height);
+        if (!moved.All(i => page.TranslateClipPath(i, dx, dy)))
+        {
+            return false;
+        }
+
+        return EditVerifier.CountChangedCoverage(clipped, page.RenderOnTransparent(width, height)) == 0;
+    }
+
+    /// <summary>Whether a moved object sticks out of the visible page further than before, on any side.</summary>
+    private static bool SticksOutFurther(PdfRect before, PdfRect after, PdfRect page)
+    {
+        const float Tolerance = 0.01f;
+        return Math.Max(0, page.Left - after.Left) > Math.Max(0, page.Left - before.Left) + Tolerance
+            || Math.Max(0, after.Right - page.Right) > Math.Max(0, before.Right - page.Right) + Tolerance
+            || Math.Max(0, page.Bottom - after.Bottom) > Math.Max(0, page.Bottom - before.Bottom) + Tolerance
+            || Math.Max(0, after.Top - page.Top) > Math.Max(0, before.Top - page.Top) + Tolerance;
+    }
+
     private PdfPage GetPage(int pageIndex)
     {
         ThrowIfDisposed();
@@ -674,4 +854,24 @@ public sealed class DocumentSession : IDisposable
     private bool IsValidPage(int pageIndex) => pageIndex >= 0 && pageIndex < _document.PageCount;
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+
+    /// <summary>What an applied run edit did to the page's objects.</summary>
+    /// <param name="Removed">How many text objects were removed.</param>
+    /// <param name="ShiftX">How far the rest of the run moved, in page space.</param>
+    /// <param name="End">Where the new text ends along the run's baseline by its advance widths; <paramref name="TrimmedEnd"/> leaves out trailing spaces.</param>
+    /// <param name="HiddenBefore">Objects to hide in the original page to compare everything else.</param>
+    /// <param name="HiddenAfter">The same objects in the edited page.</param>
+    private sealed record RunChange(
+        TextRunLayout Layout,
+        TextRunEdit Edit,
+        int Removed,
+        double ShiftX,
+        double ShiftY,
+        double End,
+        double TrimmedEnd,
+        IReadOnlyList<int> HiddenBefore,
+        IReadOnlyList<int> HiddenAfter)
+    {
+        public bool MovedRest => ShiftX != 0 || ShiftY != 0;
+    }
 }

@@ -72,7 +72,15 @@ public sealed unsafe class PdfPage
     }
 
     /// <summary>Renders the whole page, with annotations, onto a white background.</summary>
-    public RenderedBitmap Render(int pixelWidth, int pixelHeight)
+    public RenderedBitmap Render(int pixelWidth, int pixelHeight) => Render(pixelWidth, pixelHeight, 0xFFFFFFFF);
+
+    /// <summary>
+    /// Renders the page onto a transparent background, so the alpha channel shows what is drawn,
+    /// in any color, white included.
+    /// </summary>
+    internal RenderedBitmap RenderOnTransparent(int pixelWidth, int pixelHeight) => Render(pixelWidth, pixelHeight, 0);
+
+    private RenderedBitmap Render(int pixelWidth, int pixelHeight, uint background)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(pixelWidth, 1);
         ArgumentOutOfRangeException.ThrowIfLessThan(pixelHeight, 1);
@@ -93,7 +101,7 @@ public sealed unsafe class PdfPage
 
                 try
                 {
-                    FPDFBitmap_FillRect(bitmap, 0, 0, pixelWidth, pixelHeight, 0xFFFFFFFF);
+                    FPDFBitmap_FillRect(bitmap, 0, 0, pixelWidth, pixelHeight, background);
                     FPDF_RenderPageBitmap(bitmap, handle, 0, 0, pixelWidth, pixelHeight, 0, FPDF_ANNOT);
                 }
                 finally
@@ -135,59 +143,16 @@ public sealed unsafe class PdfPage
     {
         lock (PdfiumLibrary.Sync)
         {
-            var handle = Handle;
-            var runs = new List<PdfTextRun>();
-            var textPage = FPDFText_LoadPage(handle);
-            if (textPage == 0)
-            {
-                return runs;
-            }
-
-            try
-            {
-                var count = FPDFPage_CountObjects(handle);
-                for (var i = 0; i < count; i++)
-                {
-                    var obj = FPDFPage_GetObject(handle, i);
-                    if (obj != 0 && FPDFPageObj_GetType(obj) == FPDF_PAGEOBJ_TEXT)
-                    {
-                        runs.Add(CreateRun(i, obj, textPage));
-                    }
-                }
-            }
-            finally
-            {
-                FPDFText_ClosePage(textPage);
-            }
-
-            return runs;
+            return TextLayout.Build(Handle, Index).Runs.Select(r => r.Run).ToList();
         }
     }
 
+    /// <summary>The run that contains the page object at <paramref name="objectIndex"/>, if it is text.</summary>
     public PdfTextRun? TryGetTextRun(int objectIndex)
     {
         lock (PdfiumLibrary.Sync)
         {
-            var obj = GetTextObject(objectIndex);
-            if (obj == 0)
-            {
-                return null;
-            }
-
-            var textPage = FPDFText_LoadPage(Handle);
-            if (textPage == 0)
-            {
-                return null;
-            }
-
-            try
-            {
-                return CreateRun(objectIndex, obj, textPage);
-            }
-            finally
-            {
-                FPDFText_ClosePage(textPage);
-            }
+            return GetRunLayout(objectIndex)?.Run;
         }
     }
 
@@ -271,11 +236,12 @@ public sealed unsafe class PdfPage
         return obj != 0 && FPDFPageObj_GetType(obj) == FPDF_PAGEOBJ_TEXT ? obj : 0;
     }
 
-    internal nint GetTextFont(int objectIndex)
-    {
-        var obj = GetTextObject(objectIndex);
-        return obj == 0 ? 0 : FPDFTextObj_GetFont(obj);
-    }
+    /// <summary>The page's top-level text objects and the runs they form, valid until the page changes.</summary>
+    internal (IReadOnlyList<TextPiece> Pieces, IReadOnlyList<TextRunLayout> Runs) GetTextLayout() => TextLayout.Build(Handle, Index);
+
+    /// <summary>The run that contains the page object at <paramref name="objectIndex"/>, with the objects it is made of.</summary>
+    internal TextRunLayout? GetRunLayout(int objectIndex) =>
+        GetTextLayout().Runs.FirstOrDefault(r => r.Contains(objectIndex));
 
     /// <summary>Hides or shows one object in memory, for example to render a page without it.</summary>
     internal bool SetObjectActive(int objectIndex, bool active)
@@ -328,23 +294,106 @@ public sealed unsafe class PdfPage
         return true;
     }
 
-    /// <summary>Reads a text object's text through a fresh text page, so it reflects recent edits.</summary>
-    internal string ReadText(nint textObject)
+    /// <summary>Removes one object from the page and frees it.</summary>
+    internal bool RemoveObject(int objectIndex)
     {
-        var textPage = FPDFText_LoadPage(Handle);
-        if (textPage == 0)
+        var handle = Handle;
+        if (objectIndex < 0 || objectIndex >= FPDFPage_CountObjects(handle))
         {
-            return string.Empty;
+            return false;
         }
 
-        try
+        var obj = FPDFPage_GetObject(handle, objectIndex);
+        if (obj == 0 || FPDFPage_RemoveObject(handle, obj) == 0)
         {
-            return ReadText(textObject, textPage);
+            return false;
         }
-        finally
+
+        FPDFPageObj_Destroy(obj);
+        _contentDirty = true;
+        return true;
+    }
+
+    /// <summary>The advance width of <paramref name="text"/> in a text object's font and size, in its text space units.</summary>
+    internal double MeasureText(int objectIndex, string text)
+    {
+        var obj = GetTextObject(objectIndex);
+        if (obj == 0)
         {
-            FPDFText_ClosePage(textPage);
+            return double.NaN;
         }
+
+        float size = 0;
+        FPDFTextObj_GetFontSize(obj, &size);
+        return TextLayout.Measure(FPDFTextObj_GetFont(obj), size, text);
+    }
+
+    /// <summary>Moves one object by a page-space offset.</summary>
+    internal bool TranslateObject(int objectIndex, double dx, double dy)
+    {
+        var handle = Handle;
+        if (objectIndex < 0 || objectIndex >= FPDFPage_CountObjects(handle))
+        {
+            return false;
+        }
+
+        var obj = FPDFPage_GetObject(handle, objectIndex);
+        if (obj == 0)
+        {
+            return false;
+        }
+
+        FPDFPageObj_Transform(obj, 1, 0, 0, 1, dx, dy);
+        _contentDirty = true;
+        return true;
+    }
+
+    /// <summary>The part of the page that is shown: its media box cut to its crop box, in page space.</summary>
+    internal PdfRect GetVisibleBox()
+    {
+        FsRectF box;
+        return FPDF_GetPageBoundingBox(Handle, &box) != 0
+            ? new PdfRect(box.Left, box.Bottom, box.Right, box.Top)
+            : new PdfRect(float.NegativeInfinity, float.NegativeInfinity, float.PositiveInfinity, float.PositiveInfinity);
+    }
+
+    /// <summary>Whether a page object is clipped by at least one path.</summary>
+    internal bool HasClipPath(int objectIndex)
+    {
+        var obj = GetObjectHandle(objectIndex);
+        var clip = obj == 0 ? 0 : FPDFPageObj_GetClipPath(obj);
+        return clip != 0 && FPDFClipPath_CountPaths(clip) > 0;
+    }
+
+    /// <summary>Moves one object's clipping path by a page-space offset, in memory only, for example to render it.</summary>
+    internal bool TranslateClipPath(int objectIndex, double dx, double dy)
+    {
+        var obj = GetObjectHandle(objectIndex);
+        if (obj == 0)
+        {
+            return false;
+        }
+
+        FPDFPageObj_TransformClipPath(obj, 1, 0, 0, 1, dx, dy);
+        return true;
+    }
+
+    /// <summary>Hides every object except the given ones, in memory, to render them on their own.</summary>
+    internal void ShowOnly(IReadOnlyCollection<int> objectIndexes)
+    {
+        var handle = Handle;
+        var shown = objectIndexes.ToHashSet();
+        var count = FPDFPage_CountObjects(handle);
+        for (var i = 0; i < count; i++)
+        {
+            FPDFPageObj_SetIsActive(FPDFPage_GetObject(handle, i), shown.Contains(i) ? 1 : 0);
+        }
+    }
+
+    private nint GetObjectHandle(int objectIndex)
+    {
+        var handle = Handle;
+        return objectIndex >= 0 && objectIndex < FPDFPage_CountObjects(handle) ? FPDFPage_GetObject(handle, objectIndex) : 0;
     }
 
     internal void SetRotation(int quarterTurns) => FPDFPage_SetRotation(Handle, quarterTurns);
@@ -373,77 +422,5 @@ public sealed unsafe class PdfPage
             FPDF_ClosePage(_handle);
             _handle = 0;
         }
-    }
-
-    private static string ReadText(nint textObject, nint textPage)
-    {
-        var byteLength = FPDFTextObj_GetText(textObject, textPage, null, 0);
-        if (byteLength <= 2)
-        {
-            return string.Empty;
-        }
-
-        var buffer = new char[byteLength / 2];
-        fixed (char* chars = buffer)
-        {
-            byteLength = FPDFTextObj_GetText(textObject, textPage, (ushort*)chars, byteLength);
-        }
-
-        // The returned length includes the terminating NUL. PDFium also attributes the gap before
-        // the next run on a line to this run as a generated space, so trailing whitespace is dropped.
-        return new string(buffer, 0, Math.Max(0, (int)(byteLength / 2) - 1)).TrimEnd();
-    }
-
-    private static (string Name, bool IsSubset) ReadFontName(nint font)
-    {
-        if (font == 0)
-        {
-            return ("(no font)", false);
-        }
-
-        var length = FPDFFont_GetBaseFontName(font, null, 0);
-        if (length <= 1)
-        {
-            return ("(unnamed font)", false);
-        }
-
-        var buffer = new byte[(int)length];
-        fixed (byte* bytes = buffer)
-        {
-            FPDFFont_GetBaseFontName(font, bytes, length);
-        }
-
-        var name = Encoding.UTF8.GetString(buffer, 0, (int)length - 1);
-
-        // Subset fonts carry a six-uppercase-letter tag, e.g. "ABCDEF+Arial-BoldMT" (ISO 32000-1, 9.6.4).
-        var isSubset = name.Length > 7 && name[6] == '+' && !name.AsSpan(0, 6).ContainsAnyExceptInRange('A', 'Z');
-        return (isSubset ? name[7..] : name, isSubset);
-    }
-
-    private PdfTextRun CreateRun(int objectIndex, nint obj, nint textPage)
-    {
-        float left, bottom, right, top;
-        FPDFPageObj_GetBounds(obj, &left, &bottom, &right, &top);
-
-        var font = FPDFTextObj_GetFont(obj);
-        var (fontName, isSubset) = ReadFontName(font);
-
-        float size = 0;
-        FPDFTextObj_GetFontSize(obj, &size);
-        FsMatrix matrix;
-        var scale = FPDFPageObj_GetMatrix(obj, &matrix) != 0
-            ? MathF.Sqrt((matrix.C * matrix.C) + (matrix.D * matrix.D))
-            : 1f;
-
-        return new PdfTextRun(
-            Index,
-            objectIndex,
-            ReadText(obj, textPage),
-            new PdfRect(left, bottom, right, top),
-            fontName,
-            font != 0 && FPDFFont_GetIsEmbedded(font) == 1,
-            isSubset,
-            size * scale,
-            FPDFTextObj_GetTextRenderMode(obj) == FPDF_TEXTRENDERMODE_INVISIBLE);
     }
 }

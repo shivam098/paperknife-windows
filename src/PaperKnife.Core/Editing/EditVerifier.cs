@@ -22,7 +22,15 @@ internal static class EditVerifier
         return (Math.Max(1, (int)Math.Round(widthPoints * scale)), Math.Max(1, (int)Math.Round(heightPoints * scale)));
     }
 
-    public static int CountChangedPixels(RenderedBitmap before, RenderedBitmap after)
+    public static int CountChangedPixels(RenderedBitmap before, RenderedBitmap after) => CountChanged(before, after, coverage: false);
+
+    /// <summary>
+    /// Counts pixels whose coverage differs: the alpha channel of renderings on a transparent
+    /// background, which shows content of any color.
+    /// </summary>
+    public static int CountChangedCoverage(RenderedBitmap before, RenderedBitmap after) => CountChanged(before, after, coverage: true);
+
+    private static int CountChanged(RenderedBitmap before, RenderedBitmap after, bool coverage)
     {
         if (before.Width != after.Width || before.Height != after.Height)
         {
@@ -38,9 +46,12 @@ internal static class EditVerifier
             for (var x = 0; x < before.Width; x++)
             {
                 var i = row + (x * 4);
-                if (Math.Abs(a[i] - b[i]) > ChannelTolerance
-                    || Math.Abs(a[i + 1] - b[i + 1]) > ChannelTolerance
-                    || Math.Abs(a[i + 2] - b[i + 2]) > ChannelTolerance)
+                var differs = coverage
+                    ? Math.Abs(a[i + 3] - b[i + 3]) > ChannelTolerance
+                    : Math.Abs(a[i] - b[i]) > ChannelTolerance
+                        || Math.Abs(a[i + 1] - b[i + 1]) > ChannelTolerance
+                        || Math.Abs(a[i + 2] - b[i + 2]) > ChannelTolerance;
+                if (differs)
                 {
                     changed++;
                 }

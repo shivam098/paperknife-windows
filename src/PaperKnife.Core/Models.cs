@@ -22,10 +22,17 @@ public sealed class RenderedBitmap
     public ReadOnlySpan<byte> Pixels => _pixels;
 }
 
-/// <summary>Text drawn by one top-level PDF text object (one text-showing operator in the page content).</summary>
+/// <summary>
+/// A piece of text as PaperKnife edits it: one or more consecutive top-level text objects that sit
+/// next to each other on one baseline and look the same, usually a line or a table cell. Most
+/// PDFs draw such text with one object, but some draw every character or word separately.
+/// </summary>
+/// <param name="ObjectIndex">Index of the run's first page object; the run spans <paramref name="ObjectCount"/> consecutive objects.</param>
+/// <param name="Text">The text, without trailing whitespace.</param>
 public sealed record PdfTextRun(
     int PageIndex,
     int ObjectIndex,
+    int ObjectCount,
     string Text,
     PdfRect Bounds,
     string FontName,

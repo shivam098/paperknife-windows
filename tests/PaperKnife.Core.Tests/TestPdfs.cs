@@ -51,7 +51,34 @@ internal static unsafe class TestPdfs
         }
     }
 
-    private static void AddStandardText(nint document, nint page, string text, double x, double y, float size)
+    /// <summary>
+    /// One page whose lines draw every character, spaces included, as a text object of its own,
+    /// the way PDFs made from web pages by wkhtmltopdf (Qt) do. 12 pt Helvetica.
+    /// </summary>
+    public static PdfSnapshot CharacterByCharacter(params (string Text, double X, double Y)[] lines)
+    {
+        lock (PdfiumLibrary.Sync)
+        {
+            using var document = PdfDocument.CreateNew();
+            var page = FPDFPage_New(document.Handle, 0, 612, 792);
+            foreach (var (text, start, y) in lines)
+            {
+                var x = start;
+                foreach (var c in text)
+                {
+                    var textObject = AddStandardText(document.Handle, page, c.ToString(), x, y, 12);
+                    float width = 0;
+                    Assert.NotEqual(0, FPDFFont_GetGlyphWidth(FPDFTextObj_GetFont(textObject), c, 12, &width));
+                    x += width;
+                }
+            }
+
+            FinishPage(page);
+            return document.Save();
+        }
+    }
+
+    private static nint AddStandardText(nint document, nint page, string text, double x, double y, float size)
     {
         nint textObject;
         fixed (byte* fontName = "Helvetica\0"u8)
@@ -62,6 +89,7 @@ internal static unsafe class TestPdfs
         SetText(textObject, text);
         FPDFPageObj_Transform(textObject, 1, 0, 0, 1, x, y);
         FPDFPage_InsertObject(page, textObject);
+        return textObject;
     }
 
     private static void SetText(nint textObject, string text)
