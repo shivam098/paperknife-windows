@@ -1,5 +1,7 @@
+using PaperKnife.Core.Content;
 using PaperKnife.Core.Editing;
 using PaperKnife.Core.Pdfium;
+using PaperKnife.Core.Syntax;
 
 namespace PaperKnife.Core;
 
@@ -13,9 +15,13 @@ public sealed class DocumentSession : IDisposable
     private readonly string? _password;
     private readonly LinkedList<PdfSnapshot> _undo = new();
     private readonly Stack<PdfSnapshot> _redo = new();
+    private readonly Dictionary<int, ContentPage?> _contentPages = [];
     private PdfDocument _document;
     private PdfSnapshot _current;
     private PdfSnapshot _saved;
+    private PdfSnapshot? _contentSnapshot;
+    private PdfFile? _contentFile;
+    private IReadOnlyList<PdfPageNode>? _contentPageTree;
     private bool _disposed;
 
     private DocumentSession(PdfSnapshot snapshot, string? password, string? filePath)
@@ -35,6 +41,9 @@ public sealed class DocumentSession : IDisposable
 
     /// <summary>Approximate memory the undo history may use. The newest undo step is always kept.</summary>
     public long HistoryLimitBytes { get; set; } = 512L * 1024 * 1024;
+
+    /// <summary>Whether text edits may be made in the content stream; tests turn it off to exercise PDFium's page rewrite.</summary>
+    internal bool UseContentEditing { get; set; } = true;
 
     public bool IsModified
     {
@@ -179,7 +188,12 @@ public sealed class DocumentSession : IDisposable
                 blockers.Add("The author of this PDF restricted editing.");
             }
 
-            blockers.AddRange(FindContentBlockers(page));
+            // Content PDFium can't rewrite only matters when PDFium has to rewrite the page.
+            if (GetContentPage(pageIndex) is not { } content || content.Text.ObjectShows.Count != page.CountObjects().Text)
+            {
+                blockers.AddRange(FindContentBlockers(page));
+            }
+
             return blockers;
         }
     }
@@ -191,6 +205,11 @@ public sealed class DocumentSession : IDisposable
     /// a character the font can't draw there would be impossible to detect.
     /// </summary>
     /// <param name="objectIndex">Any page object of the run, normally <see cref="PdfTextRun.ObjectIndex"/>.</param>
+    /// <remarks>
+    /// When PaperKnife can read the page's content with certainty, only the text-showing operations
+    /// involved change, in the content stream itself (see <see cref="ContentTextEdit"/>); otherwise
+    /// PDFium regenerates the page.
+    /// </remarks>
     public EditResult ReplaceText(int pageIndex, int objectIndex, string newText)
     {
         ArgumentNullException.ThrowIfNull(newText);
@@ -204,7 +223,8 @@ public sealed class DocumentSession : IDisposable
             }
 
             var page = _document.GetPage(pageIndex);
-            var layout = page.GetRunLayout(objectIndex);
+            var (pagePieces, runs) = page.GetTextLayout();
+            var layout = runs.FirstOrDefault(r => r.Contains(objectIndex));
             if (layout is null)
             {
                 return EditResult.Rejected(EditRejection.InvalidTarget, "The selected text no longer exists. Select it again.");
@@ -226,61 +246,57 @@ public sealed class DocumentSession : IDisposable
                 return EditResult.Rejected(EditRejection.EditingRestricted, "The author of this PDF restricted editing.");
             }
 
-            var blockers = FindContentBlockers(page);
-            if (blockers.Count > 0)
-            {
-                return EditResult.Rejected(EditRejection.PageNotEditable, blockers[0]);
-            }
-
             var edit = TextRunEdit.Plan([.. layout.Pieces.Select(p => p.Text)], layout.Separators, text);
-            if (edit.Last + 1 < layout.Pieces.Count && !layout.Pieces[edit.Last].IsEndKnown)
-            {
-                return EditResult.Rejected(EditRejection.PageNotEditable, "PaperKnife can't measure exactly where this part of the line ends, so it can't move the rest of the line to fit.");
-            }
-
-            if (edit.NewText.Length > 0)
-            {
-                var support = TextSupport.Check(layout.Pieces[edit.First].Font, original.FontName, edit.NewText);
-                if (!support.IsSupported)
-                {
-                    return EditResult.Rejected(EditRejection.UnsupportedCharacters, support.Problem!, support.Characters);
-                }
-            }
-
             var pageCount = _document.PageCount;
             var countsBefore = page.CountObjects();
             var (width, height) = EditVerifier.CheckSize(page.Width, page.Height);
-            var runObjects = layout.Pieces.Select(p => p.ObjectIndex).ToList();
-            var rewriteProblem = CheckRewriteKeepsAppearance(pageIndex, runObjects, page.Render(width, height));
-            if (rewriteProblem is not null)
+
+            PdfSnapshot? candidate = null;
+            RunChange? change = null;
+            if (GetContentPage(pageIndex) is { } content)
             {
-                return EditResult.Rejected(EditRejection.PageNotEditable, rewriteProblem);
+                ContentEditResult prepared;
+                try
+                {
+                    prepared = ContentTextEdit.Prepare(content, pagePieces, layout, edit);
+                }
+                catch (Exception ex) when (IsReadFailure(ex))
+                {
+                    prepared = new ContentEditResult(ContentEditOutcome.NotApplicable, ex.Message);
+                }
+
+                if (prepared.Outcome == ContentEditOutcome.Rejected)
+                {
+                    return prepared.Rejection!;
+                }
+
+                if (prepared.Outcome == ContentEditOutcome.Ready)
+                {
+                    candidate = PdfSnapshot.FromBytes(prepared.Candidate);
+                    change = prepared.Change!;
+                }
             }
 
-            PdfSnapshot candidate;
-            RunChange change;
-            using (var scratch = PdfDocument.Load(_current, _password))
+            if (candidate is null)
             {
-                var failure = ApplyRunEdit(scratch.GetPage(pageIndex), layout, edit, out change);
+                var failure = RewriteWithPdfium(pageIndex, page, layout, edit, width, height, out candidate, out change);
                 if (failure is not null)
                 {
                     return failure;
                 }
-
-                candidate = scratch.Save();
             }
 
-            var before = RenderWithoutObjects(_current, pageIndex, change.HiddenBefore, width, height);
-            PdfDocument? verified = PdfDocument.Load(candidate, _password);
+            var before = RenderWithoutObjects(_current, pageIndex, change!.HiddenBefore, width, height);
+            PdfDocument? verified = PdfDocument.Load(candidate!, _password);
             try
             {
-                var problem = VerifyTextEdit(verified, candidate, pageCount, change, countsBefore, before, out var edited, out var warnings);
+                var problem = VerifyTextEdit(verified, candidate!, pageCount, change, countsBefore, before, out var edited, out var warnings);
                 if (problem is not null)
                 {
                     return EditResult.Rejected(EditRejection.CollateralChange, problem);
                 }
 
-                Commit(candidate, verified);
+                Commit(candidate!, verified);
                 verified = null;
                 var message = change.MovedRest
                     ? "Text updated, and the rest of the line moved to fit. Verified: nothing else on this page changed."
@@ -292,6 +308,53 @@ public sealed class DocumentSession : IDisposable
                 verified?.Dispose();
             }
         }
+    }
+
+    /// <summary>
+    /// Makes an edit by having PDFium regenerate the page's content, for pages PaperKnife can't
+    /// edit in the content stream. Refuses pages whose content PDFium can't write back unchanged.
+    /// </summary>
+    private EditResult? RewriteWithPdfium(int pageIndex, PdfPage page, TextRunLayout layout, TextRunEdit edit, int width, int height, out PdfSnapshot? candidate, out RunChange? change)
+    {
+        candidate = null;
+        change = null;
+        var blockers = FindContentBlockers(page);
+        if (blockers.Count > 0)
+        {
+            return EditResult.Rejected(EditRejection.PageNotEditable, blockers[0]);
+        }
+
+        if (edit.Last + 1 < layout.Pieces.Count && !layout.Pieces[edit.Last].IsEndKnown)
+        {
+            return EditResult.Rejected(EditRejection.PageNotEditable, "PaperKnife can't measure exactly where this part of the line ends, so it can't move the rest of the line to fit.");
+        }
+
+        if (edit.NewText.Length > 0)
+        {
+            var support = TextSupport.Check(layout.Pieces[edit.First].Font, layout.Run.FontName, edit.NewText);
+            if (!support.IsSupported)
+            {
+                return EditResult.Rejected(EditRejection.UnsupportedCharacters, support.Problem!, support.Characters);
+            }
+        }
+
+        var runObjects = layout.Pieces.Select(p => p.ObjectIndex).ToList();
+        var rewriteProblem = CheckRewriteKeepsAppearance(pageIndex, runObjects, page.Render(width, height));
+        if (rewriteProblem is not null)
+        {
+            return EditResult.Rejected(EditRejection.PageNotEditable, rewriteProblem);
+        }
+
+        using var scratch = PdfDocument.Load(_current, _password);
+        var failure = ApplyRunEdit(scratch.GetPage(pageIndex), layout, edit, out var applied);
+        if (failure is not null)
+        {
+            return failure;
+        }
+
+        candidate = scratch.Save();
+        change = applied;
+        return null;
     }
 
     /// <summary>Rotates a page clockwise by the given number of quarter turns.</summary>
@@ -742,6 +805,10 @@ public sealed class DocumentSession : IDisposable
         _document.Dispose();
         _document = document;
         _current = snapshot;
+        _contentSnapshot = null;
+        _contentFile = null;
+        _contentPageTree = null;
+        _contentPages.Clear();
         Version++;
     }
 
@@ -855,23 +922,66 @@ public sealed class DocumentSession : IDisposable
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
-    /// <summary>What an applied run edit did to the page's objects.</summary>
-    /// <param name="Removed">How many text objects were removed.</param>
-    /// <param name="ShiftX">How far the rest of the run moved, in page space.</param>
-    /// <param name="End">Where the new text ends along the run's baseline by its advance widths; <paramref name="TrimmedEnd"/> leaves out trailing spaces.</param>
-    /// <param name="HiddenBefore">Objects to hide in the original page to compare everything else.</param>
-    /// <param name="HiddenAfter">The same objects in the edited page.</param>
-    private sealed record RunChange(
-        TextRunLayout Layout,
-        TextRunEdit Edit,
-        int Removed,
-        double ShiftX,
-        double ShiftY,
-        double End,
-        double TrimmedEnd,
-        IReadOnlyList<int> HiddenBefore,
-        IReadOnlyList<int> HiddenAfter)
+    /// <summary>
+    /// The page's content, read by PaperKnife's own parser, or null when content editing is off or
+    /// the file is encrypted or can't be read with certainty. Cached for the current snapshot.
+    /// </summary>
+    private ContentPage? GetContentPage(int pageIndex)
     {
-        public bool MovedRest => ShiftX != 0 || ShiftY != 0;
+        if (!UseContentEditing)
+        {
+            return null;
+        }
+
+        if (!ReferenceEquals(_contentSnapshot, _current))
+        {
+            _contentSnapshot = _current;
+            _contentPages.Clear();
+            try
+            {
+                _contentFile = PdfFile.TryOpen(_current.Memory, out _) is { IsEncrypted: false } file ? file : null;
+                _contentPageTree = _contentFile?.GetPages() is { } pages && pages.Count == _document.PageCount ? pages : null;
+            }
+            catch (Exception ex) when (IsReadFailure(ex))
+            {
+                _contentFile = null;
+                _contentPageTree = null;
+            }
+        }
+
+        if (_contentFile is null || _contentPageTree is null)
+        {
+            return null;
+        }
+
+        if (!_contentPages.TryGetValue(pageIndex, out var page))
+        {
+            if (_contentPages.Count >= 16)
+            {
+                _contentPages.Clear();
+            }
+
+            try
+            {
+                page = ContentPage.TryLoad(_contentFile, _contentPageTree, pageIndex);
+            }
+            catch (Exception ex) when (IsReadFailure(ex))
+            {
+                page = null;
+            }
+
+            _contentPages[pageIndex] = page;
+        }
+
+        return page;
     }
+
+    /// <summary>
+    /// Exceptions from reading a damaged or unusual file with PaperKnife's own parser. Such files
+    /// are left to PDFium rather than failing the operation.
+    /// </summary>
+    private static bool IsReadFailure(Exception ex) =>
+        ex is ArgumentException or IndexOutOfRangeException or InvalidCastException or InvalidOperationException
+            or KeyNotFoundException or OverflowException or FormatException or InvalidDataException
+            or NullReferenceException or DivideByZeroException;
 }

@@ -130,17 +130,20 @@ public sealed class TextRunTests
         Assert.Equal(before.Bounds.Right - 3.336f, result.TextRun!.Bounds.Right, 0.05f);
     }
 
-    [Fact]
-    public void ReplaceText_OnCharacterRun_ChecksTheLayoutAsSaved()
+    [Theory]
+    [InlineData(true, 10.004)]  // content editing keeps the 2 pt letter spacing, so "B" brings 2 pt more
+    [InlineData(false, 8.004)]  // PDFium's rewrite drops letter spacing; "B" is 667 units wide
+    public void ReplaceText_OnCharacterRun_ChecksTheLayoutAsSaved(bool contentEditing, float growth)
     {
-        // Character spacing doesn't change one-character objects, and saving drops it.
+        // Character spacing doesn't change one-character objects.
         using var session = DocumentSession.FromSnapshot(RawPdf.SinglePage("2 Tc\n" + OneObjectPerCharacter("/F1", "AAA", 667, 667, 667)));
+        session.UseContentEditing = contentEditing;
         var before = Find(session, "AAA");
 
         var result = session.ReplaceText(0, before.ObjectIndex, "ABAA");
 
         Assert.Equal(EditStatus.Applied, result.Status);
-        Assert.Equal(before.Bounds.Right + 8.004f, result.TextRun!.Bounds.Right, 0.05f); // "B" is 667 wide
+        Assert.Equal(before.Bounds.Right + growth, result.TextRun!.Bounds.Right, 0.05f);
     }
 
     [Theory]

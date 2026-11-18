@@ -49,12 +49,18 @@ destination, so an existing file is never left half-written.
 sequenceDiagram
     participant UI as App
     participant S as DocumentSession
+    participant C as Content stream
     participant X as Scratch copy
     participant V as Reloaded candidate
     UI->>S: ReplaceText(page, run, text)
-    S->>S: Pre-checks (permissions, page content, characters)
-    S->>X: Load current snapshot, rewrite the changed objects, move the rest of the run, read it back
-    X-->>S: Candidate snapshot (saved without incremental update)
+    S->>S: Pre-checks (permissions, characters)
+    alt PaperKnife can read the page's content
+        S->>C: Rewrite the run's text operations, append an incremental update
+        C-->>S: Candidate snapshot
+    else Otherwise
+        S->>X: Rewrite check, change the objects, PDFium regenerates the page
+        X-->>S: Candidate snapshot (saved without incremental update)
+    end
     S->>V: Load candidate
     S->>V: Compare page count, object counts, text, positions and pixels
     alt Everything matches
@@ -67,7 +73,6 @@ sequenceDiagram
 
 1. **Pre-checks**, before anything changes:
    - The document's permissions allow changing content (see [Permissions](#permissions)).
-   - The page has no content that PDFium can't rewrite (gradient shadings, unknown objects).
    - Trailing whitespace is removed from the new text: it is invisible, and a character the font
      can't draw there would be impossible to detect.
    - The new text has no line breaks, tabs or characters outside the Basic Multilingual Plane,
@@ -75,21 +80,28 @@ sequenceDiagram
    - The font can draw every character that will be written: it has a positive advance width,
      and PDFium returns a glyph outline that differs from the font's "missing glyph" outline
      (for spaces, an empty outline, because a space that draws a shape is the missing-glyph box).
-   - **Rewrite check:** the page is rewritten by PDFium with nothing changed (the objects of the
-     edited run are only marked as modified) and must render exactly as before. This catches
-     styling PDFium can't write back, including on the edited text itself, which step 4 can't
-     see because it hides that text.
-2. **Apply** the smallest change to a scratch copy (see [Editing a run](#editing-a-run)) and
-   read the text back. `FPDFText_SetText` silently turns characters it can't encode into
-   character code 0, so the round trip catches anything the pre-checks missed.
-3. **Serialize** the scratch copy with `FPDF_SaveAsCopy`.
-4. **Verify** by loading the candidate as a new document:
+     PDFium can't outline the glyphs of Type 3 fonts, which store each glyph as a drawing; for
+     those, the character must have a glyph procedure.
+2. **Apply** the smallest change (see [Editing a run](#editing-a-run)), in one of two ways:
+   - **In the content stream**, whenever PaperKnife can read the page's content with certainty
+     (see [Editing the content stream](#editing-the-content-stream)). Only the run's text
+     operations change, and the result is appended to the file as an incremental update.
+   - **By PDFium rewriting the page** otherwise, for example in encrypted files. PaperKnife first
+     refuses pages with content PDFium can't write back (gradient shadings, unknown objects) and
+     runs the **rewrite check**: the page is rewritten by PDFium with nothing changed (the
+     objects of the edited run are only marked as modified) and must render exactly as before.
+     This catches styling PDFium can't write back, including on the edited text itself, which
+     step 3 can't see because it hides that text. The change is then applied to a scratch copy
+     and the text read back: `FPDFText_SetText` silently turns characters it can't encode into
+     character code 0. The scratch copy is serialized with `FPDF_SaveAsCopy`.
+3. **Verify** by loading the candidate as a new document:
    - the page count is unchanged;
    - the edited page has the same number of objects of each kind as before, minus the text
      objects the edit removed;
    - the changed object contains the new text. If more of the run follows it, it also ends where
-     the font's advance widths say it should. This is checked here rather than in memory,
-     because saving drops character and word spacing that still applies in memory;
+     the font's advance widths say it should. This is checked on the saved candidate rather than
+     in memory, because PDFium's rewrite drops character and word spacing that still applies in
+     memory;
    - every object after it in the run still has its text and moved by exactly the planned
      distance (within 0.01 point), and sticks out of the page no further than before;
    - moving didn't change how the moved objects are clipped. Moving a text object doesn't move
@@ -104,15 +116,17 @@ sequenceDiagram
      and the candidate, the whole page renders the same at 144 dpi, allowing for anti-aliasing
      noise. Hiding the objects, rather than skipping their area, also checks whatever lies under
      or over them.
-5. **Commit** or discard. A rejected edit returns a plain-language reason.
+4. **Commit** or discard. A rejected edit returns a plain-language reason.
 
 Page commands (rotate, delete, move, append) follow the same pattern with checks suited to them.
 
 ### Why every edit is verified
 
-When a page changes, PDFium regenerates that page's content stream from its own object model
+When PDFium rewrites a page, it regenerates that page's content stream from its own object model
 (`CPDF_PageContentGenerator` in `core/fpdfapi/edit/cpdf_pagecontentgenerator.cpp`). That
-regeneration doesn't reproduce everything a PDF can contain:
+regeneration doesn't reproduce everything a PDF can contain. PaperKnife avoids it by editing the
+content stream itself whenever it can, so this matters only for the remaining pages, for example
+in encrypted files:
 
 | PDFium behavior | Effect without verification | What PaperKnife does |
 |---|---|---|
@@ -122,10 +136,10 @@ regeneration doesn't reproduce everything a PDF can contain:
 | `WriteColorToStream` writes only RGB and gray colors | CMYK, spot and other colors turn black | The rewrite check fails, so the edit is refused |
 | `ProcessText` stops for fonts other than Type 1, TrueType and CID fonts (for example Type 3) | That text disappears | The rewrite check fails, so the edit is refused |
 
-The tests include hand-written PDFs with shadings, inline images, character and word spacing and
-CMYK colors (on other text and on the edited text itself), and check that each edit is refused.
-Milestone M2 replaces whole-page regeneration with surgical edits that keep every other byte of
-the page, which will lift these restrictions; verification stays as a safety net.
+The tests include hand-written PDFs with shadings, inline images, character and word spacing,
+CMYK colors (on other text and on the edited text itself) and Type 3 fonts, and check both that
+PDFium's rewrite refuses each edit and that editing the content stream makes it while keeping
+that content.
 
 ### Comparing text
 
@@ -182,27 +196,77 @@ Text nested inside form XObjects isn't editable yet, and it separates the text a
 ### Editing a run
 
 `TextRunEdit` compares the run's old and new text and finds the smallest range of objects whose
-characters change. The first of them takes the new text for the whole range
-(`FPDFText_SetText`) and the others are removed. Objects before the range are untouched. Objects
-after it keep their characters and move along the baseline as a block, by the difference
-between where the new text ends and where the old text ended (PDFium lays out new text by
-advance widths, without kerning). For example, in a line drawn one character per object,
-changing `Dear Customer` to `Dear Reader` writes `Read` into the object that drew `C`, removes
-the objects for `ustom` and moves `er` to the left.
+characters change. The first of them takes the new text for the whole range and the others are
+removed. Objects before the range are untouched. Objects after it keep their characters and move
+along the baseline as a block, by the difference between where the new text ends and where the
+old text ended. For example, in a line drawn one character per object, changing
+`Dear Customer` to `Dear Reader` writes `Read` into the object that drew `C`, removes the
+objects for `ustom` and moves `er` to the left.
 
 - Inserted text joins the object it follows or, after a gap, the object that comes next.
 - Deleting part of a line removes objects and moves the rest. Deleting a whole line isn't
   supported yet.
 - The run's trailing whitespace stays as it is.
-- Where the old text ended is measured from the glyph that was drawn. A font's width for a
-  Unicode value (`FPDFFont_GetGlyphWidth`) can belong to another glyph: ligatures, alternate
-  glyphs and some encodings map several character codes to one Unicode value. PDFium's loose
-  character box is the advance box of the code that was drawn, united with the glyph's ink, and
-  a space's tight box is its advance box. Where these show the advance, PaperKnife uses it;
-  otherwise the advance ends inside the ink, and the font's width must agree with that. If it
-  doesn't, the edit is refused rather than move the rest of the line by a guess.
+- In the content stream, both ends are computed from the character codes, the font's widths and
+  the text's own character and word spacing. When PDFium rewrites the page, it lays out the new
+  text by advance widths, without kerning or spacing, and where the old text ended is measured
+  from the glyph that was drawn: a font's width for a Unicode value (`FPDFFont_GetGlyphWidth`)
+  can belong to another glyph, because ligatures, alternate glyphs and some encodings map several
+  character codes to one Unicode value. PDFium's loose character box is the advance box of the
+  code that was drawn, united with the glyph's ink, and a space's tight box is its advance box.
+  Where these show the advance, PaperKnife uses it; otherwise the advance ends inside the ink,
+  and the font's width must agree with that. If it doesn't, the edit is refused rather than move
+  the rest of the line by a guess.
 - Only the run moves. Text beyond it, such as the next table cell, stays where it is; if longer
   text now overlaps it, the edit succeeds with a warning.
+
+## Editing the content stream
+
+PDFium can't write back everything a page contains (see
+[Why every edit is verified](#why-every-edit-is-verified)), so PaperKnife makes text edits in the
+page's content stream itself whenever it can read the file with certainty. The code is in
+`Syntax/` (reading and appending to PDF files) and `Content/` (content streams and fonts), and
+`Editing/ContentTextEdit.cs` puts them together.
+
+1. **Read the file.** `PdfFile` reads cross-reference tables and streams (including PNG
+   predictors), object streams, chains of incremental updates and the page tree with inherited
+   resources. It refuses anything it doesn't fully understand, such as encryption, damaged
+   cross-reference data or a stream whose `/Length` is wrong, rather than repair it the way PDFium
+   does. Those files are left to PDFium's page rewrite.
+2. **Read the content.** The page's content streams are decoded (Flate, LZW, ASCIIHex, ASCII85
+   and RunLength) and split into operations, skipping inline image data. `TextShowSimulator`
+   follows the graphics and text state the way PDFium's content parser does
+   (`core/fpdfapi/page/cpdf_streamcontentparser.cpp`): which `Tj`, `TJ`, `'` and `"` operations
+   create text objects, and where each starts. It reads glyph widths as PDFium does: whole
+   numbers from `/Widths`, Type 3 widths scaled by the font matrix and rounded, `/W` for CID
+   fonts, and PDFium's own metrics for the standard 14 fonts. A page qualifies only if it creates
+   exactly as many text objects as PDFium reports, and no other page draws its content streams.
+3. **Find the operations.** The n-th text object PDFium reports is the n-th operation that creates
+   one. An edit changes only the `BT … ET` blocks holding the edited and moved operations. Every
+   text-showing operation in those blocks must start where PDFium places its object (within
+   0.01 point, with the same matrix). Blocks that change the graphics state (`q`, `Q`, `cm`) or
+   text inside `/ActualText` marked content are left to PDFium.
+4. **Encode the new text** with the font's own character codes, found through its ToUnicode map,
+   or its encoding and glyph names. Characters the font lacks are refused, as before.
+5. **Rewrite the blocks.** Each affected block gets an explicit `Tm` before every text-showing
+   operation, so no position depends on another operation's width. The edited operation shows the
+   new codes, removed ones are left out, and the rest of the run is shifted along the baseline.
+   Everything else in the block, such as fonts, colors, spacing and marked content, is copied byte
+   for byte; `TD` keeps its effect on the leading through an explicit `TL`, and `"` keeps its word
+   and character spacing. Bytes outside these blocks don't change.
+6. **Append an update.** The new content becomes a new version of the page's content stream,
+   appended to the file with a cross-reference section of the same kind as the file's last one
+   (ISO 32000-1, 7.5.6). Every byte of the original file stays where it was.
+7. **Verify** the candidate like any other edit.
+
+Because the rest of the page is never regenerated, letter and word spacing, print colors, inline
+images, shadings and Type 3 fonts survive, both elsewhere on the page and on the edited text
+itself, so the rewrite check isn't needed. Each edit appends the page's whole content again,
+compressed: a few kilobytes for a typical page, more for pages with a lot of vector graphics.
+PaperKnife's reader also caps what it decodes (64 MB per page) and the work it spends on a font's
+width and character maps, and it refuses object streams nested in object streams, as PDFium
+does. Beyond those limits it treats the data as unknown and leaves the edit to PDFium, or uses
+PDFium's own glyph widths.
 
 ## Permissions
 
@@ -239,11 +303,16 @@ low-privilege process is on the roadmap.
   (`dotnet test --project …`).
 - Documents are generated by the tests: through PDFium for ordinary text, as hand-written PDF
   syntax for constructs PDFium can't create (inline images, shadings, character spacing,
-  kerning), or with the standard RC4 security handler for permission tests.
+  kerning, Type 3 fonts, object and cross-reference streams), or with the standard RC4 security
+  handler for permission tests.
 - Tests cover the refusals for unsupported characters and layout, shadings, inline images,
-  character and word spacing, CMYK colors, changes under the edited text and author
-  restrictions, and check that a refused change leaves the document unchanged. Refusals not yet
-  covered: empty text, unknown page objects and Type 3 fonts.
+  character and word spacing, CMYK colors, Type 3 fonts, changes under the edited text and author
+  restrictions when PDFium rewrites the page, and check that a refused change leaves the document
+  unchanged. Refusals not yet covered: empty text and unknown page objects.
+- Content edits are tested on the same constructs and also on object and cross-reference
+  streams, pages drawn by several content streams or sharing one with another page, line
+  operators (`'`, `"`, `TD`, `TL`), and text placed right after other text. They must keep every
+  byte of the original file and the edited text's own color and spacing.
 - CI runs on Windows x64 and Windows on Arm.
 
 ## Decisions
@@ -252,6 +321,7 @@ low-privilege process is on the roadmap.
 |---|---|
 | WinUI 3 rather than WPF | Microsoft's recommended UI framework for new desktop apps; native on Arm64; builds with the .NET SDK alone. |
 | PDFium rather than MuPDF | Permissive license compatible with Apache-2.0 and app stores; mature rendering. |
+| PaperKnife's own PDF reader and incremental writer for text edits, rather than a PDF library | An edit changes only the affected text operations and appends an update, so every other byte of the file survives. A reader that refuses anything uncertain stays small and predictable, and PDFium's page rewrite remains for the files it refuses. |
 | Whole-document snapshots for undo | Exact undo with simple code. Large documents pay in memory and time; incremental history is planned. |
 | Unpackaged, self-contained app with an Inno Setup installer | Nothing else to install (.NET and the Windows App SDK runtime are included), installs per user without administrator rights, and one installer serves x64 and Arm64. An MSIX package for the Microsoft Store can come later. |
 | The `Microsoft.WindowsAppSDK.WinUI` component rather than the `Microsoft.WindowsAppSDK` meta-package | The meta-package also ships AI and machine-learning runtimes (about 40 MB per architecture) that PaperKnife doesn't use. |

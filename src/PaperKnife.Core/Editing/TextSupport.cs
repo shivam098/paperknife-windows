@@ -21,7 +21,11 @@ internal static unsafe class TextSupport
     private const uint MissingGlyphProbe = 0xFFFF;
     private const float ProbeSize = 12f;
 
-    public static TextSupportResult Check(nint font, string fontName, string text)
+    /// <param name="checkGlyphs">
+    /// False to check only the layout rules. PDFium can't outline Type 3 glyphs, so their
+    /// characters are checked against the font's glyph procedures instead.
+    /// </param>
+    public static TextSupportResult Check(nint font, string fontName, string text, bool checkGlyphs = true)
     {
         if (font == 0)
         {
@@ -46,7 +50,7 @@ internal static unsafe class TextSupport
             return new("Scripts that need text shaping (for example Hindi, Arabic or Thai) can't be edited yet.", shaping);
         }
 
-        var missing = FindMissingGlyphs(font, text);
+        var missing = checkGlyphs ? FindMissingGlyphs(font, text) : [];
         if (missing.Count > 0)
         {
             return new($"The font “{fontName}” in this PDF doesn't contain: {string.Join(' ', missing)}", missing);

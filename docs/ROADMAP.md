@@ -31,17 +31,20 @@ Milestones are ordered by value to users and by risk. Each milestone ends with a
 
 ## M2 — Better editing
 
-- **Surgical content editing.** Replace only the drawing instruction that was edited and keep
-  every other byte of the page. This removes the current limits that come from PDFium rewriting
-  whole pages (letter and word spacing, print colors, inline images, shadings, Type 3 fonts). Candidate
-  building blocks: our own content-stream tokenizer plus an object-level writer such as PDFsharp
-  (MIT) or the qpdf C API (Apache-2.0).
+- ✅ **Surgical content editing.** Text edits change only the edited text operations in the page's
+  content stream and are appended to the file as an incremental update, keeping every other byte
+  (letter and word spacing, print colors, inline images, shadings, Type 3 fonts). PaperKnife
+  reads the file structure and content itself and leaves anything uncertain to PDFium's page
+  rewrite. Still to do: encrypted files, keeping kerning inside the edited text, and compacting
+  the file when it is saved.
 - **Fallback fonts with consent.** When the document's font lacks a character, offer to use a
   similar installed font, embedding only the glyphs used and only if the font's license allows
   embedding.
 - ✅ Edit whole lines in PDFs that draw text one character or word at a time: consecutive text
   objects are grouped into runs, only the changed characters are rewritten and the rest of the
-  line moves to fit. Still to do: paragraphs, and reflowing inside the original area.
+  line moves to fit. Still to do: lines split across fonts (for example the "fi" ligature in PDFs
+  saved from Chrome, which sits in a font of its own), paragraphs, and reflowing inside the
+  original area.
 - Delete text, add text boxes, images and signature images.
 - Annotations: highlight, underline, notes, ink and shapes.
 

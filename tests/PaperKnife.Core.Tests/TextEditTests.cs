@@ -55,9 +55,9 @@ public sealed class TextEditTests
     }
 
     [Fact]
-    public void ReplaceText_WhenRewriteWouldDropAnInlineImage_IsRejected()
+    public void PdfiumRewrite_WhenItWouldDropAnInlineImage_IsRejected()
     {
-        using var session = OpenRaw(RawPdf.BaseContent + RawPdf.InlineImage);
+        using var session = OpenRaw(RawPdf.BaseContent + RawPdf.InlineImage, contentEditing: false);
         var before = session.CurrentSnapshot;
 
         var result = session.ReplaceText(0, Find(session, "Hello World").ObjectIndex, "Hello PaperKnife");
@@ -67,10 +67,10 @@ public sealed class TextEditTests
     }
 
     [Fact]
-    public void ReplaceText_WhenRewriteWouldLoseCharacterSpacing_IsRejected()
+    public void PdfiumRewrite_WhenItWouldLoseCharacterSpacing_IsRejected()
     {
         // PDFium's content generator doesn't write Tc, so the spaced-out line would shrink.
-        using var session = OpenRaw(RawPdf.BaseContent + RawPdf.CharacterSpacing);
+        using var session = OpenRaw(RawPdf.BaseContent + RawPdf.CharacterSpacing, contentEditing: false);
 
         var result = session.ReplaceText(0, Find(session, "Hello World").ObjectIndex, "Hello PaperKnife");
 
@@ -82,9 +82,9 @@ public sealed class TextEditTests
     [InlineData("0 1 1 0 k")] // CMYK fill color: PDFium writes only RGB and gray colors
     [InlineData("3 Tc")]      // letter spacing
     [InlineData("8 Tw")]      // word spacing
-    public void ReplaceText_WhenRewriteWouldChangeTheEditedTextsOwnStyle_IsRejected(string style)
+    public void PdfiumRewrite_WhenItWouldChangeTheEditedTextsOwnStyle_IsRejected(string style)
     {
-        using var session = OpenRaw($"BT /F1 24 Tf {style} 72 700 Td (Hello World) Tj ET\n");
+        using var session = OpenRaw($"BT /F1 24 Tf {style} 72 700 Td (Hello World) Tj ET\n", contentEditing: false);
         var before = session.CurrentSnapshot;
 
         var result = session.ReplaceText(0, Find(session, "Hello World").ObjectIndex, "Hello PaperKnife");
@@ -106,9 +106,9 @@ public sealed class TextEditTests
     }
 
     [Fact]
-    public void ReplaceText_OnPageWithShading_IsRefusedUpFront()
+    public void PdfiumRewrite_OnPageWithShading_IsRefusedUpFront()
     {
-        using var session = OpenRaw(RawPdf.BaseContent + RawPdf.ShadedArea);
+        using var session = OpenRaw(RawPdf.BaseContent + RawPdf.ShadedArea, contentEditing: false);
         var before = session.CurrentSnapshot;
 
         var result = session.ReplaceText(0, Find(session, "Hello World").ObjectIndex, "Hello PaperKnife");
@@ -119,11 +119,11 @@ public sealed class TextEditTests
     }
 
     [Fact]
-    public void ReplaceText_WhenRewriteWouldChangeContentUnderTheEditedText_IsRejected()
+    public void PdfiumRewrite_WhenItWouldChangeContentUnderTheEditedText_IsRejected()
     {
         // The small spaced-out word sits inside "Hello World"'s own area, where a check that only
         // compared the rest of the page would miss it.
-        using var session = OpenRaw(RawPdf.BaseContent + "BT /F1 6 Tf 4 Tc 80 704 Td (tiny) Tj ET\n");
+        using var session = OpenRaw(RawPdf.BaseContent + "BT /F1 6 Tf 4 Tc 80 704 Td (tiny) Tj ET\n", contentEditing: false);
         var before = session.CurrentSnapshot;
 
         var result = session.ReplaceText(0, Find(session, "Hello World").ObjectIndex, "Hello PaperKnife");
@@ -263,7 +263,12 @@ public sealed class TextEditTests
         return path;
     }
 
-    private static DocumentSession OpenRaw(string content) => DocumentSession.FromSnapshot(RawPdf.SinglePage(content));
+    private static DocumentSession OpenRaw(string content, bool contentEditing = true)
+    {
+        var session = DocumentSession.FromSnapshot(RawPdf.SinglePage(content));
+        session.UseContentEditing = contentEditing;
+        return session;
+    }
 
     private static PdfTextRun Find(DocumentSession session, string text) =>
         session.GetTextRuns(0).Single(r => TextEquivalence.AreEquivalent(r.Text, text));

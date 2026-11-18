@@ -7,7 +7,7 @@ editor. Your documents never leave your device: no uploads, no account, no telem
 
 ![PaperKnife after editing a line of text: the change is verified before it is kept](docs/images/edit-verified.png)
 
-> **Status: early preview (version 0.1).** The engine and a first editor work, with rough
+> **Status: early preview (version 0.2).** The engine and a first editor work, with rough
 > edges. Keep a backup of any document you can't afford to lose.
 
 ## Download
@@ -42,12 +42,14 @@ Nothing else needs to be installed.
   made from web pages, draw every character or word separately. PaperKnife still selects the
   whole line or table cell, rewrites only the characters you changed, and moves the rest of the
   line to fit.
-- **Every edit is verified.** Before editing, PaperKnife checks that it can rewrite the page
-  without changing how it looks, so the edited text keeps its exact style. It then applies the
-  change to a copy, saves that copy and opens it again, hides the edited text in both versions
-  and compares the rest of the page pixel by pixel, including whatever lies under the text. If
-  anything else would change, or the font can't draw a character you typed, the edit is
-  cancelled and your document stays exactly as it was.
+- **Only your text changes.** PaperKnife changes just the drawing instructions of the text you
+  edit and adds the change to the end of the file, so everything else on the page stays exactly
+  as it was: letter spacing, print colors, small images, gradients, and fonts stored as drawings
+  (common in tickets and invoices saved from Chrome).
+- **Every edit is verified.** PaperKnife saves the edited copy, opens it again, hides the edited
+  text in both versions and compares the rest of the page pixel by pixel, including whatever
+  lies under the text. If anything else would change, or the font can't draw a character you
+  typed, the edit is cancelled and your document stays exactly as it was.
 - Undo and redo, rotate and delete pages, add pages from another PDF.
 - Save as a new file. An existing file is replaced in one step and is never left half-written.
 
@@ -61,9 +63,10 @@ PaperKnife would rather say no than damage your document. Today it can't:
   letters already used in the document);
 - edit scripts that need text shaping (Hindi, Arabic, Thai and others), add line breaks or reflow
   paragraphs;
-- edit pages with gradient shading, or pages that PDFium can't rewrite without changing how they
-  look, for example because they use letter spacing, print (CMYK) colors or small embedded
-  images (see [why](docs/ARCHITECTURE.md#why-every-edit-is-verified));
+- edit some pages of encrypted PDFs (protected by a password or by restrictions): PaperKnife can't
+  yet change their drawing instructions directly, so its PDF engine rewrites the whole page
+  instead, and refuses when the page has gradients, letter spacing, print (CMYK) colors, small
+  embedded images or fonts stored as drawings (see [why](docs/ARCHITECTURE.md#why-every-edit-is-verified));
 - edit scanned pages (they contain pictures of text, not text).
 
 All of these are on the [roadmap](docs/ROADMAP.md).
@@ -89,7 +92,7 @@ dotnet run --project src/PaperKnife.App -- C:\path\to\file.pdf                  
 
 The app builds for your PC's architecture by default; pass `-r win-x64` or `-r win-arm64` to
 choose. The first build downloads the Windows App SDK (several hundred megabytes). To build the
-installer and portable ZIPs yourself, run `pwsh build/package.ps1 -Version 0.1.1`; see
+installer and portable ZIPs yourself, run `pwsh build/package.ps1 -Version 0.2.0`; see
 [CONTRIBUTING.md](CONTRIBUTING.md#releasing).
 
 ## Repository layout

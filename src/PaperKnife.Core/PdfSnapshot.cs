@@ -17,6 +17,8 @@ public sealed class PdfSnapshot
 
     public ReadOnlySpan<byte> Span => _data;
 
+    internal ReadOnlyMemory<byte> Memory => _data;
+
     internal unsafe byte* Pointer => (byte*)Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(_data));
 
     public static PdfSnapshot FromFile(string path)
