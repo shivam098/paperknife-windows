@@ -74,6 +74,11 @@ internal sealed class TextPiece(int objectIndex, nint handle)
 
     public nint Font { get; set; }
 
+    /// <summary>The font's name as PDFium reports it: /BaseFont, without the subset tag for embedded fonts.</summary>
+    public string FontName { get; set; } = string.Empty;
+
+    public bool IsEmbedded { get; set; }
+
     public int RenderMode { get; set; }
 
     public PdfRect? Bounds { get; set; }
@@ -340,6 +345,8 @@ internal static unsafe class TextLayout
         FPDFTextObj_GetFontSize(handle, &size);
         piece.FontSize = size;
         piece.Font = FPDFTextObj_GetFont(handle);
+        piece.FontName = piece.Font == 0 ? string.Empty : RawFontName(piece.Font);
+        piece.IsEmbedded = piece.Font != 0 && FPDFFont_GetIsEmbedded(piece.Font) == 1;
         piece.RenderMode = FPDFTextObj_GetTextRenderMode(handle);
 
         float left, bottom, right, top;
@@ -517,10 +524,18 @@ internal static unsafe class TextLayout
         && previous.Next == next && SameStyle(previous, next);
 
     private static bool SameStyle(TextPiece a, TextPiece b) =>
-        a.Font != 0 && a.Font == b.Font && a.RenderMode == b.RenderMode
+        a.Font != 0 && (a.Font == b.Font || SameTypeface(a, b)) && a.RenderMode == b.RenderMode
         && a.FontSize > 0 && Math.Abs(a.FontSize - b.FontSize) <= a.FontSize * 1e-3
         && a.HasMatrix && b.HasMatrix && SameOrientation(a.Matrix, b.Matrix)
         && SameColors(a, b) && SameMarks(a, b) && SameClip(a, b);
+
+    /// <summary>
+    /// Whether two embedded fonts have the same name, as two subsets of one font do, and the complete
+    /// copy PaperKnife adds for new letters and the font it copies (PDFium reports names without
+    /// subset tags). Text in them belongs together.
+    /// </summary>
+    private static bool SameTypeface(TextPiece a, TextPiece b) =>
+        a.IsEmbedded && b.IsEmbedded && b.Font != 0 && a.FontName.Length > 0 && string.Equals(a.FontName, b.FontName, StringComparison.Ordinal);
 
     /// <summary>
     /// How far <paramref name="to"/> lies beyond <paramref name="from"/> along the baseline of
@@ -660,10 +675,24 @@ internal static unsafe class TextLayout
             return ("(no font)", false);
         }
 
+        var name = RawFontName(font);
+        if (name.Length == 0)
+        {
+            return ("(unnamed font)", false);
+        }
+
+        // Subset fonts carry a six-uppercase-letter tag, e.g. "ABCDEF+Arial-BoldMT" (ISO 32000-1, 9.6.4).
+        var isSubset = name.Length > 7 && name[6] == '+' && !name.AsSpan(0, 6).ContainsAnyExceptInRange('A', 'Z');
+        return (isSubset ? name[7..] : name, isSubset);
+    }
+
+    /// <summary>The font's name as PDFium reports it, or empty.</summary>
+    private static string RawFontName(nint font)
+    {
         var length = FPDFFont_GetBaseFontName(font, null, 0);
         if (length <= 1)
         {
-            return ("(unnamed font)", false);
+            return string.Empty;
         }
 
         var buffer = new byte[(int)length];
@@ -672,10 +701,6 @@ internal static unsafe class TextLayout
             FPDFFont_GetBaseFontName(font, bytes, length);
         }
 
-        var name = Encoding.UTF8.GetString(buffer, 0, (int)length - 1);
-
-        // Subset fonts carry a six-uppercase-letter tag, e.g. "ABCDEF+Arial-BoldMT" (ISO 32000-1, 9.6.4).
-        var isSubset = name.Length > 7 && name[6] == '+' && !name.AsSpan(0, 6).ContainsAnyExceptInRange('A', 'Z');
-        return (isSubset ? name[7..] : name, isSubset);
+        return Encoding.UTF8.GetString(buffer, 0, (int)length - 1);
     }
 }

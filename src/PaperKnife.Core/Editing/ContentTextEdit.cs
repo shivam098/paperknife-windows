@@ -1,5 +1,6 @@
 using System.Text;
 using PaperKnife.Core.Content;
+using PaperKnife.Core.Fonts;
 using PaperKnife.Core.Syntax;
 using static PaperKnife.Core.Pdfium.PdfiumNative;
 
@@ -20,7 +21,10 @@ internal sealed record ContentEditResult(
     string? Reason = null,
     EditResult? Rejection = null,
     byte[]? Candidate = null,
-    RunChange? Change = null);
+    RunChange? Change = null,
+    string? AddedFont = null,
+    string? GlyphsToCheck = null,
+    string? CopyFont = null);
 
 /// <summary>
 /// Edits a run in the page's content stream itself instead of having PDFium regenerate the page:
@@ -65,40 +69,84 @@ internal static unsafe class ContentTextEdit
             return Rejected(layoutProblem.Problem!, layoutProblem.Characters);
         }
 
-        var preferred = runShows.Skip(edit.First).Take(edit.Last - edit.First + 1).SelectMany(s => s.Codes()).Select(c => c.Code).ToHashSet();
-        var codes = font.Encode(edit.NewText, preferred, out var missing);
-        if (missing.Count > 0)
+        var count = edit.Last - edit.First + 1;
+        var oldShows = runShows.GetRange(edit.First, count);
+        var preferred = oldShows.SelectMany(s => s.Codes()).Select(c => c.Code).ToHashSet();
+        double? wordGap = null;
+        var planner = new GlyphPlanner
         {
-            return font.IsType3
-                ? Rejected($"The font “{layout.Run.FontName}” in this PDF doesn't contain: {string.Join(' ', missing)}", missing)
-                : NotApplicable("The font's character map doesn't cover the new text.");
+            Font = font,
+            Width = code => Width(first, code),
+            Preferred = preferred,
+            SpaceCode = SpaceCode(font, firstPiece.Font, layout.Run.FontName, preferred),
+            WordGap = () => wordGap ??= WordGap(text, pagePieces, font, Width),
+            Old = GlyphPlanner.ReadOldGlyphs(
+                oldShows, [.. layout.Pieces.Skip(edit.First).Take(count)], [.. layout.Separators.Skip(edit.First).Take(count - 1)], Width, first),
+        };
+        var plan = planner.Plan(edit.NewText);
+        if (plan.Missing.Count > 0 && font.IsType3)
+        {
+            return Rejected(TextSupport.MissingMessage(layout.Run.FontName, plan.Missing), plan.Missing);
         }
 
-        if (!font.IsType3 && codes.Count > 0)
+        // Letters the font lacks: TeX embeds only those a document uses, and PaperKnife may have
+        // the whole font. The new text then uses a complete copy of the font; nothing else does.
+        FontCompletion? completion = null;
+        var support = plan.Missing.Count == 0 && plan.NewCharacters.Length > 0 && !font.IsType3
+            ? TextSupport.Check(firstPiece.Font, layout.Run.FontName, plan.NewCharacters)
+            : TextSupportResult.Supported;
+        if (plan.Missing.Count > 0 || !support.IsSupported)
         {
-            var support = TextSupport.Check(firstPiece.Font, layout.Run.FontName, edit.NewText);
-            if (!support.IsSupported)
+            completion = FontCompletion.TryCreate(page, first.FontName!, out var difference);
+            if (completion is null)
             {
-                return Rejected(support.Problem!, support.Characters);
+                if (plan.Missing.Count > 0)
+                {
+                    // PDFium may still encode them on its own; if it can't draw them either, say so.
+                    support = TextSupport.Check(firstPiece.Font, layout.Run.FontName, string.Concat(plan.Missing));
+                    if (support.IsSupported)
+                    {
+                        return NotApplicable("The font's character map doesn't cover the new text.");
+                    }
+                }
+
+                return Rejected(
+                    difference is null ? support.Problem! : $"{support.Problem}. PaperKnife has its own copy of this font but can't use it here: {difference}.",
+                    support.Characters);
+            }
+
+            // Kept letters keep their codes, which select the same glyphs with the same widths in the copy.
+            var copy = completion.Info;
+            plan = new GlyphPlanner
+            {
+                Font = copy,
+                Width = code => copy.Width(code),
+                Preferred = preferred,
+                SpaceCode = planner.SpaceCode,
+                WordGap = planner.WordGap,
+                Old = planner.Old,
+            }.Plan(edit.NewText);
+            var notDrawn = plan.Missing.Concat(plan.NewGlyphs.Where(g => !completion.Draws(g.Code, g.Text)).Select(g => g.Text)).Distinct().ToList();
+            if (notDrawn.Count > 0)
+            {
+                return Rejected(TextSupport.MissingMessage(layout.Run.FontName, notDrawn), notDrawn);
             }
         }
 
-        var glyphs = new List<(double Width, uint Code, double KerningAfter)>();
-        foreach (var code in codes)
+        var glyphs = plan.Glyphs;
+        if (glyphs.Any(g => double.IsNaN(g.Width)))
         {
-            if (Width(first, code) is not { } w)
-            {
-                return NotApplicable("A character's width isn't known.");
-            }
-
-            glyphs.Add((w, code, 0));
+            return NotApplicable("A character's width isn't known.");
         }
 
         // Ends along the baseline, in the units of TextRunLayout: the end of the last glyph,
         // leaving out the spacing after it, so the gap to the rest of the run stays the same.
+        // Spaces drawn as gaps count, at either end.
         double Start(ShowOp show) => layout.DistanceAlongBaseline(show.PageStart.X, show.PageStart.Y);
-        var end = Start(first) + Span(first, glyphs);
-        var trimmedEnd = Start(first) + Span(first, glyphs.Take(edit.NewText.TrimEnd().Length).ToList());
+        var lead = glyphs.Count > 0 ? -plan.InitialKerning / 1000 * first.FontSize : 0;
+        var trail = plan.TrailingKerning == 0 ? 0 : (-plan.TrailingKerning / 1000 * first.FontSize) + (glyphs.Count > 0 ? first.CharSpace : 0);
+        var end = Start(first) + lead + Span(first, glyphs) + trail;
+        var trimmedEnd = Start(first) + lead + Span(first, [.. glyphs.Take(plan.VisibleGlyphs)]);
         double oldEnd;
         var lastPiece = layout.Pieces[edit.Last];
         if (!lastPiece.HasCharacters)
@@ -108,7 +156,7 @@ internal static unsafe class ContentTextEdit
         else
         {
             var lastShow = runShows[edit.Last];
-            var oldGlyphs = new List<(double Width, uint Code, double KerningAfter)>();
+            var oldGlyphs = new List<PlannedGlyph>();
             foreach (var (code, kerning) in lastShow.Codes())
             {
                 if (Width(lastShow, code) is not { } w)
@@ -116,7 +164,7 @@ internal static unsafe class ContentTextEdit
                     return NotApplicable("A character's width isn't known.");
                 }
 
-                oldGlyphs.Add((w, code, kerning));
+                oldGlyphs.Add(new PlannedGlyph(code, w, kerning));
             }
 
             oldEnd = Start(lastShow) + Span(lastShow, oldGlyphs);
@@ -127,7 +175,7 @@ internal static unsafe class ContentTextEdit
         var moves = rest.Count > 0 && Math.Abs(shift) > firstPiece.FontSize * 1e-3;
         var (dx, dy) = moves ? (shift * firstPiece.Matrix.A, shift * firstPiece.Matrix.B) : (0d, 0d);
 
-        var keepsFirst = codes.Count > 0;
+        var keepsFirst = glyphs.Count > 0;
         var removed = runShows.Skip(keepsFirst ? edit.First + 1 : edit.First).Take(edit.Last - edit.First + (keepsFirst ? 0 : 1)).ToList();
         var roles = new Dictionary<int, Role>();
         if (keepsFirst)
@@ -153,13 +201,19 @@ internal static unsafe class ContentTextEdit
             return NotApplicable(problem);
         }
 
-        var content = Rewrite(page, text, blocks, roles, first, font.JoinCodes(codes), (dx, dy));
+        (string, string, double)? switchFont = completion is null ? null : (completion.ResourceName, first.FontName!, first.FontSize);
+        var content = Rewrite(page, text, blocks, roles, first, EditedOperation(completion?.Info ?? font, plan), (dx, dy), switchFont);
         if (content is null)
         {
             return NotApplicable("A moved text object's transformation can't be inverted.");
         }
 
-        var updates = page.Streams.Select((s, i) => new StreamUpdate(s.Number, s.Generation, i == 0 ? content : [])).ToList();
+        var updates = new List<ObjectUpdate>(page.Streams.Select((s, i) => new StreamUpdate(s.Number, s.Generation, i == 0 ? content : [])));
+        if (completion is not null)
+        {
+            updates.AddRange(completion.Updates());
+        }
+
         var candidate = IncrementalUpdate.Append(page.File, updates);
 
         var pieces = layout.Pieces;
@@ -172,7 +226,13 @@ internal static unsafe class ContentTextEdit
         }
 
         var change = new RunChange(layout, edit, removed.Count, dx, dy, end, trimmedEnd, hiddenBefore, hiddenAfter);
-        return new ContentEditResult(ContentEditOutcome.Ready, Candidate: candidate, Change: change);
+        return new ContentEditResult(
+            ContentEditOutcome.Ready,
+            Candidate: candidate,
+            Change: change,
+            AddedFont: completion is { Reused: false } ? completion.FontName : null,
+            GlyphsToCheck: completion is null ? null : plan.NewCharacters,
+            CopyFont: completion?.FontName);
     }
 
     /// <summary>
@@ -180,7 +240,7 @@ internal static unsafe class ContentTextEdit
     /// TextRunLayout units (where horizontal scaling cancels out): widths, character and word
     /// spacing and TJ adjustments, but not the spacing after the last glyph.
     /// </summary>
-    private static double Span(ShowOp show, IReadOnlyList<(double Width, uint Code, double KerningAfter)> glyphs)
+    private static double Span(ShowOp show, IReadOnlyList<PlannedGlyph> glyphs)
     {
         double total = 0;
         for (var i = 0; i < glyphs.Count; i++)
@@ -194,6 +254,76 @@ internal static unsafe class ContentTextEdit
         }
 
         return total;
+    }
+
+    /// <summary>A code that draws a space in this font, or null when spaces have to be drawn as gaps.</summary>
+    private static uint? SpaceCode(PdfFontInfo font, nint pdfiumFont, string fontName, IReadOnlySet<uint> preferred)
+    {
+        var codes = font.Encode(" ", preferred, out var missing);
+        if (missing.Count > 0 || codes.Count != 1)
+        {
+            return null;
+        }
+
+        return font.IsType3 || TextSupport.Check(pdfiumFont, fontName, " ").IsSupported ? codes[0] : null;
+    }
+
+    /// <summary>
+    /// The median gap between words, in thousandths of an em, among this font's text on the page:
+    /// the TJ adjustments PDFium reads as spaces. A third of an em, TeX's usual word space, when
+    /// there are none.
+    /// </summary>
+    private static double WordGap(ContentTextLayout text, IReadOnlyList<TextPiece> pagePieces, PdfFontInfo font, Func<ShowOp, uint, double?> width)
+    {
+        var gaps = new List<double>();
+        foreach (var show in text.ObjectShows)
+        {
+            if (ReferenceEquals(show.Font, font) && GlyphPlanner.ReadOldGlyphs([show], [pagePieces[show.Ordinal]], [], width, show) is { } glyphs)
+            {
+                gaps.AddRange(glyphs.Where(g => g.SpaceAfter).Select(g => -g.KerningAfter));
+            }
+        }
+
+        if (gaps.Count == 0)
+        {
+            return 1000.0 / 3;
+        }
+
+        gaps.Sort();
+        return gaps[gaps.Count / 2];
+    }
+
+    /// <summary>The text-showing operation for the new text: Tj, or TJ when it needs adjustments.</summary>
+    private static string EditedOperation(PdfFontInfo font, GlyphPlan plan)
+    {
+        if (!plan.HasAdjustments)
+        {
+            return CosWriter.ToText(new CosString(font.JoinCodes([.. plan.Glyphs.Select(g => g.Code)]))) + " Tj";
+        }
+
+        var operation = new StringBuilder("[");
+        if (plan.InitialKerning != 0)
+        {
+            operation.Append(CosWriter.Number(plan.InitialKerning)).Append(' ');
+        }
+
+        var codes = new List<uint>();
+        for (var i = 0; i < plan.Glyphs.Count; i++)
+        {
+            codes.Add(plan.Glyphs[i].Code);
+            if (i == plan.Glyphs.Count - 1 || plan.Glyphs[i].KerningAfter != 0)
+            {
+                operation.Append(CosWriter.ToText(new CosString(font.JoinCodes(codes))));
+                if (i < plan.Glyphs.Count - 1)
+                {
+                    operation.Append(' ').Append(CosWriter.Number(plan.Glyphs[i].KerningAfter)).Append(' ');
+                }
+
+                codes.Clear();
+            }
+        }
+
+        return operation.Append("] TJ").ToString();
     }
 
     /// <summary>
@@ -241,8 +371,9 @@ internal static unsafe class ContentTextEdit
         List<int> blocks,
         Dictionary<int, Role> roles,
         ShowOp edited,
-        byte[] newCodes,
-        (double X, double Y) shift)
+        string editedOperation,
+        (double X, double Y) shift,
+        (string Copy, string Original, double Size)? switchFont)
     {
         var content = page.Content;
         var shows = text.Shows.ToDictionary(s => s.OpIndex);
@@ -283,9 +414,18 @@ internal static unsafe class ContentTextEdit
 
                         if (role == Role.Edited)
                         {
-                            Write(output, $"{edited.GlyphMatrix.ToOperands()} Tm ");
-                            Write(output, CosWriter.ToText(new CosString(newCodes)));
-                            Write(output, " Tj\n");
+                            // Text drawn with a completed copy of the font selects the copy for itself only.
+                            if (switchFont is { } fonts)
+                            {
+                                Write(output, $"{Name(fonts.Copy)} {CosWriter.Number(fonts.Size)} Tf\n");
+                            }
+
+                            Write(output, $"{edited.GlyphMatrix.ToOperands()} Tm {editedOperation}\n");
+                            if (switchFont is { } restore)
+                            {
+                                Write(output, $"{Name(restore.Original)} {CosWriter.Number(restore.Size)} Tf\n");
+                            }
+
                             continue;
                         }
 
@@ -339,6 +479,13 @@ internal static unsafe class ContentTextEdit
     }
 
     private static void Write(MemoryStream output, string text) => output.Write(Encoding.Latin1.GetBytes(text));
+
+    private static string Name(string name)
+    {
+        var text = new StringBuilder();
+        CosWriter.WriteName(text, name);
+        return text.ToString();
+    }
 
     private static ContentEditResult NotApplicable(string reason) => new(ContentEditOutcome.NotApplicable, reason);
 

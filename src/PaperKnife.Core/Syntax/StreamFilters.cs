@@ -8,8 +8,13 @@ internal static class StreamFilters
     /// <summary>The most a single stream may decode to; larger streams are left to PDFium.</summary>
     public const int MaxDecodedLength = 64 * 1024 * 1024;
 
-    /// <summary>The decoded data, or null when a filter isn't supported or the data is damaged.</summary>
-    public static byte[]? Decode(ReadOnlySpan<byte> data, IReadOnlyList<string> filters, IReadOnlyList<CosDict?> parameters, out string? problem)
+    /// <summary>The decoded data, or null when a filter isn't supported, the data is damaged or it decodes to more than <paramref name="limit"/> bytes.</summary>
+    public static byte[]? Decode(
+        ReadOnlySpan<byte> data,
+        IReadOnlyList<string> filters,
+        IReadOnlyList<CosDict?> parameters,
+        out string? problem,
+        int limit = MaxDecodedLength)
     {
         var current = data.ToArray();
         for (var i = 0; i < filters.Count; i++)
@@ -17,14 +22,14 @@ internal static class StreamFilters
             var p = i < parameters.Count ? parameters[i] : null;
             var next = filters[i] switch
             {
-                "FlateDecode" or "Fl" => Predict(Inflate(current), p),
-                "LZWDecode" or "LZW" => Predict(Lzw(current, Integer(p, "EarlyChange", 1)), p),
+                "FlateDecode" or "Fl" => Predict(Inflate(current, limit), p),
+                "LZWDecode" or "LZW" => Predict(Lzw(current, Integer(p, "EarlyChange", 1), limit), p),
                 "ASCIIHexDecode" or "AHx" => AsciiHex(current),
-                "ASCII85Decode" or "A85" => Ascii85(current),
-                "RunLengthDecode" or "RL" => RunLength(current),
+                "ASCII85Decode" or "A85" => Ascii85(current, limit),
+                "RunLengthDecode" or "RL" => RunLength(current, limit),
                 _ => null,
             };
-            if (next is null)
+            if (next is null || next.Length > limit)
             {
                 problem = $"The stream's {filters[i]} data can't be decoded.";
                 return null;
@@ -51,7 +56,29 @@ internal static class StreamFilters
     private static int Integer(CosDict? parameters, string key, int fallback) =>
         parameters?[key] is CosNumber n && n.IsInteger ? (int)n.Value : fallback;
 
-    private static byte[]? Inflate(byte[] data)
+    /// <summary>The first <paramref name="length"/> bytes of Flate data (fewer when it is shorter), or null when it is damaged.</summary>
+    public static byte[]? InflatePrefix(ReadOnlySpan<byte> data, int length)
+    {
+        try
+        {
+            using var z = new ZLibStream(new MemoryStream(data.ToArray()), CompressionMode.Decompress);
+            var output = new byte[length];
+            var read = 0;
+            int count;
+            while (read < length && (count = z.Read(output, read, length - read)) > 0)
+            {
+                read += count;
+            }
+
+            return read == length ? output : output[..read];
+        }
+        catch (InvalidDataException)
+        {
+            return null;
+        }
+    }
+
+    private static byte[]? Inflate(byte[] data, int limit)
     {
         try
         {
@@ -61,7 +88,7 @@ internal static class StreamFilters
             int read;
             while ((read = z.Read(buffer)) > 0)
             {
-                if (output.Length + read > MaxDecodedLength)
+                if (output.Length + read > limit)
                 {
                     return null;
                 }
@@ -207,7 +234,7 @@ internal static class StreamFilters
         return [.. output];
     }
 
-    private static byte[]? Ascii85(byte[] data)
+    private static byte[]? Ascii85(byte[] data, int limit)
     {
         var output = new List<byte>(data.Length);
         ulong value = 0;
@@ -226,7 +253,7 @@ internal static class StreamFilters
 
             if (b == 'z' && count == 0)
             {
-                if (output.Count + 4 > MaxDecodedLength)
+                if (output.Count + 4 > limit)
                 {
                     return null;
                 }
@@ -275,7 +302,7 @@ internal static class StreamFilters
         return [.. output];
     }
 
-    private static byte[]? RunLength(byte[] data)
+    private static byte[]? RunLength(byte[] data, int limit)
     {
         var output = new List<byte>(data.Length * 2);
         var i = 0;
@@ -287,7 +314,7 @@ internal static class StreamFilters
                 break;
             }
 
-            if (output.Count + 257 > MaxDecodedLength)
+            if (output.Count + 257 > limit)
             {
                 return null;
             }
@@ -316,7 +343,7 @@ internal static class StreamFilters
         return [.. output];
     }
 
-    private static byte[]? Lzw(byte[] data, int earlyChange)
+    private static byte[]? Lzw(byte[] data, int earlyChange, int limit)
     {
         var output = new MemoryStream();
         var table = new List<byte[]>(4096);
@@ -385,7 +412,7 @@ internal static class StreamFilters
             }
 
             output.Write(entry);
-            if (output.Length > MaxDecodedLength)
+            if (output.Length > limit)
             {
                 return null;
             }

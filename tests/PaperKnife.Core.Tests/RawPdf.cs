@@ -34,6 +34,9 @@ internal static class RawPdf
 
     public const string Type3Text = "BT /F3 24 Tf 72 400 Td (abc) Tj ET\n";
 
+    /// <summary>"ab ca" set the way TeX sets text: kerning between a and b, and a gap instead of a space.</summary>
+    public const string GappedText = "BT /F3 24 Tf 72 400 Td [(a) 30 (b) -400 (ca)] TJ ET\n";
+
     private static readonly string[] Shared =
     [
         "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
@@ -98,9 +101,10 @@ internal static class RawPdf
         return useObjectStreams ? WriteWithStreams(objects) : WriteWithTable(objects);
     }
 
-    private static string Stream(string data) => $"<< /Length {Encoding.Latin1.GetByteCount(data)} >>\nstream\n{data}\nendstream";
+    internal static string Stream(string data) => $"<< /Length {Encoding.Latin1.GetByteCount(data)} >>\nstream\n{data}\nendstream";
 
-    private static PdfSnapshot WriteWithTable(List<string> objects)
+    /// <summary>Writes numbered objects (the first is the catalog) with a cross-reference table.</summary>
+    internal static PdfSnapshot WriteWithTable(List<string> objects)
     {
         var pdf = new StringBuilder("%PDF-1.7\n%\u00E2\u00E3\u00CF\u00D3\n");
         var offsets = new List<int>();

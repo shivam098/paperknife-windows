@@ -3,18 +3,28 @@ using System.Text;
 
 namespace PaperKnife.Core.Syntax;
 
-/// <summary>A new version of an existing stream object, with its decoded data.</summary>
-internal sealed record StreamUpdate(int Number, int Generation, byte[] Data);
+/// <summary>A new version of an object, written by <see cref="IncrementalUpdate"/>.</summary>
+internal abstract record ObjectUpdate(int Number, int Generation);
 
 /// <summary>
-/// Appends an incremental update to a PDF (ISO 32000-1, 7.5.6): new versions of some streams and a
+/// A new version of a stream object, with its decoded data. It is written compressed, with
+/// <paramref name="Entries"/> (for example a font program's /Length1) added to its dictionary.
+/// </summary>
+internal sealed record StreamUpdate(int Number, int Generation, byte[] Data, IReadOnlyDictionary<string, CosObject>? Entries = null)
+    : ObjectUpdate(Number, Generation);
+
+/// <summary>A new version of an object that isn't a stream, such as a dictionary.</summary>
+internal sealed record ValueUpdate(int Number, int Generation, CosObject Value) : ObjectUpdate(Number, Generation);
+
+/// <summary>
+/// Appends an incremental update to a PDF (ISO 32000-1, 7.5.6): new versions of some objects and a
 /// cross-reference section pointing to them. Every byte of the original file stays as it was.
 /// </summary>
 internal static class IncrementalUpdate
 {
-    public static byte[] Append(PdfFile file, IReadOnlyList<StreamUpdate> updates)
+    public static byte[] Append(PdfFile file, IReadOnlyList<ObjectUpdate> updates)
     {
-        var output = new MemoryStream(file.Data.Length + updates.Sum(u => u.Data.Length / 2) + 1024);
+        var output = new MemoryStream(file.Data.Length + updates.OfType<StreamUpdate>().Sum(u => u.Data.Length / 2) + 1024);
         output.Write(file.Data.Span);
         var last = file.Data.Span[^1];
         if (last is not ((byte)'\n' or (byte)'\r'))
@@ -25,11 +35,32 @@ internal static class IncrementalUpdate
         var entries = new List<(int Number, int Generation, long Offset)>();
         foreach (var update in updates.OrderBy(u => u.Number))
         {
-            var data = StreamFilters.Deflate(update.Data);
             entries.Add((update.Number, update.Generation, output.Position));
-            Write(output, string.Create(CultureInfo.InvariantCulture, $"{update.Number} {update.Generation} obj\n<</Length {data.Length}/Filter/FlateDecode>>\nstream\n"));
-            output.Write(data);
-            Write(output, "\nendstream\nendobj\n");
+            var text = new StringBuilder();
+            text.Append(CultureInfo.InvariantCulture, $"{update.Number} {update.Generation} obj\n");
+            switch (update)
+            {
+                case StreamUpdate stream:
+                    var data = StreamFilters.Deflate(stream.Data);
+                    text.Append(CultureInfo.InvariantCulture, $"<</Length {data.Length}/Filter/FlateDecode");
+                    foreach (var (key, value) in stream.Entries ?? new Dictionary<string, CosObject>())
+                    {
+                        CosWriter.WriteName(text, key);
+                        text.Append(' ');
+                        CosWriter.Write(text, value);
+                    }
+
+                    text.Append(">>\nstream\n");
+                    Write(output, text.ToString());
+                    output.Write(data);
+                    Write(output, "\nendstream\nendobj\n");
+                    break;
+                case ValueUpdate value:
+                    CosWriter.Write(text, value.Value);
+                    text.Append("\nendobj\n");
+                    Write(output, text.ToString());
+                    break;
+            }
         }
 
         var size = Math.Max(file.Size, entries.Max(e => e.Number) + 1);

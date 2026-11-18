@@ -380,8 +380,12 @@ internal static class TextShowSimulator
 
             if (!fonts.TryGetValue(name, out var info))
             {
-                info = file.ResolveDict(fontResources?[name]) is { } dict ? PdfFontInfo.Load(file, dict) : null;
+                // Read once per font, however many names resources give it.
+                var entry = fontResources?[name];
+                info = entry is CosRef reference ? file.Derived("FontInfo", reference.Number, Read) : Read();
                 fonts[name] = info;
+
+                PdfFontInfo? Read() => file.ResolveDict(entry) is { } dict ? PdfFontInfo.Load(file, dict) : null;
             }
 
             return info;

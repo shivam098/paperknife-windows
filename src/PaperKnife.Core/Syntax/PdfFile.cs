@@ -14,12 +14,16 @@ internal sealed record PdfPageNode(int Number, int Generation, CosDict Dict, Cos
 /// </summary>
 internal sealed class PdfFile
 {
+    /// <summary>The highest object number PDFium accepts (cpdf_parser.h, kMaxObjectNumber).</summary>
+    public const int MaxObjectNumber = 24 * 1024 * 1024;
+
     private const int MaxSections = 1000;
     private const int MaxNesting = 32;
 
     private readonly Dictionary<int, XrefEntry> _xref = [];
     private readonly Dictionary<int, CosObject?> _objects = [];
     private readonly Dictionary<int, ObjectStream?> _objectStreams = [];
+    private readonly Dictionary<(string Kind, int Number), object?> _derived = [];
     private readonly HashSet<int> _loading = [];
 
     private PdfFile(ReadOnlyMemory<byte> data) => Data = data;
@@ -101,7 +105,47 @@ internal sealed class PdfFile
 
     public string? ResolveName(CosObject? value) => Resolve(value) is CosName n ? n.Value : null;
 
-    public byte[]? DecodeStream(CosStream stream, out string? problem)
+    /// <summary>
+    /// A value derived from an indirect object, such as a font's character map, computed once
+    /// however many resource names, fonts or pages refer to the object, until
+    /// <see cref="ForgetDerived"/>. A reader kept open while pages are viewed calls that to
+    /// bound what it keeps.
+    /// </summary>
+    public T? Derived<T>(string kind, int number, Func<T?> compute)
+        where T : class
+    {
+        if (!_derived.TryGetValue((kind, number), out var value))
+        {
+            value = compute();
+            _derived[(kind, number)] = value;
+        }
+
+        return value as T;
+    }
+
+    /// <summary>Forgets the values <see cref="Derived{T}"/> computed; they are computed again when needed.</summary>
+    public void ForgetDerived() => _derived.Clear();
+
+    /// <summary>
+    /// The first <paramref name="length"/> bytes of the stream's decoded data, or null when it is
+    /// shorter or can't be decoded. Flate data is decoded only that far.
+    /// </summary>
+    public byte[]? DecodeStreamPrefix(CosStream stream, int length, int limit)
+    {
+        var filter = Resolve(stream.Dict["Filter"]);
+        if (stream.Dict["F"] is null && stream.Dict["DecodeParms"] is null
+            && (filter is null || filter is CosName { Value: "FlateDecode" or "Fl" }))
+        {
+            var raw = Data.Span.Slice(stream.DataStart, stream.DataLength);
+            var prefix = filter is null ? raw[..Math.Min(length, raw.Length)].ToArray() : StreamFilters.InflatePrefix(raw, length);
+            return prefix is { } p && p.Length == length ? p : null;
+        }
+
+        return DecodeStream(stream, out _, limit) is { } data && data.Length >= length ? data[..length] : null;
+    }
+
+    /// <summary>The stream's decoded data, or null when it can't be decoded or would be longer than <paramref name="limit"/> bytes.</summary>
+    public byte[]? DecodeStream(CosStream stream, out string? problem, int limit = StreamFilters.MaxDecodedLength)
     {
         var filters = new List<string>();
         var parameters = new List<CosDict?>();
@@ -140,7 +184,7 @@ internal sealed class PdfFile
                 return null;
         }
 
-        return StreamFilters.Decode(Data.Span.Slice(stream.DataStart, stream.DataLength), filters, parameters, out problem);
+        return StreamFilters.Decode(Data.Span.Slice(stream.DataStart, stream.DataLength), filters, parameters, out problem, limit);
     }
 
     /// <summary>The pages in document order, or null when the page tree isn't sound.</summary>
@@ -268,8 +312,8 @@ internal sealed class PdfFile
             }
         }
 
-        var size = Trailer["Size"] is CosNumber s && s.IsInteger ? (int)s.Value : 0;
-        Size = Math.Max(size, _xref.Count == 0 ? 1 : _xref.Keys.Max() + 1);
+        var size = Trailer["Size"] is CosNumber s && s.IsInteger && s.Value is >= 0 and <= int.MaxValue ? (long)s.Value : 0;
+        Size = (int)Math.Min(int.MaxValue, Math.Max(size, _xref.Count == 0 ? 1 : _xref.Keys.Max() + 1L));
         return Trailer["Root"] is CosRef ? null : "The file has no catalog.";
     }
 

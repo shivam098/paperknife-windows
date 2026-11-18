@@ -11,6 +11,11 @@
     <PackageReference Include="bblanchon.PDFium.Win32" />
   </ItemGroup>
 
+  <!-- Full Type 1 fonts whose copies draw new letters in subset fonts of PDFs made with TeX (see third_party/amsfonts). -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\third_party\amsfonts\fonts\*.pfb" LogicalName="PaperKnife.Fonts.%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="PaperKnife.Core.Tests" />
   </ItemGroup>

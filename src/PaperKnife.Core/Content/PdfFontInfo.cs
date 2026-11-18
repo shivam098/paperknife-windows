@@ -12,13 +12,19 @@ internal sealed class PdfFontInfo
 {
     private const int MaxMappedCodes = 1 << 17;
 
-    private readonly Dictionary<uint, string> _unicode = [];
-    private readonly Dictionary<string, List<uint>> _codes = new(StringComparer.Ordinal);
+    // Text by code from glyph names, for the codes the ToUnicode map lacks.
+    private readonly Dictionary<uint, string> _namedText = [];
     private readonly Dictionary<uint, string> _glyphNames = [];
     private readonly HashSet<string>? _charProcs;
     private readonly int[]? _simpleWidths;
     private readonly Dictionary<uint, int>? _cidWidths;
     private readonly int _defaultCidWidth = 1000;
+
+    // The ToUnicode map, shared with every font that uses it and never changed.
+    private IReadOnlyDictionary<uint, string>? _toUnicode;
+
+    // The codes for each text, built when an edit first needs them.
+    private Dictionary<string, List<uint>>? _codes;
 
     private PdfFontInfo(string subtype, int codeLength)
     {
@@ -33,7 +39,11 @@ internal sealed class PdfFontInfo
 
     public bool IsType3 => Subtype == "Type3";
 
-    public static PdfFontInfo Load(PdfFile file, CosDict font)
+    /// <param name="builtinEncoding">
+    /// The glyph names of the font program's own encoding, when the caller knows them; otherwise they
+    /// are read from an embedded Type 1 program when PDFium uses them.
+    /// </param>
+    public static PdfFontInfo Load(PdfFile file, CosDict font, Func<int, string?>? builtinEncoding = null)
     {
         var subtype = file.ResolveName(font["Subtype"]) ?? string.Empty;
         PdfFontInfo info;
@@ -49,30 +59,16 @@ internal sealed class PdfFontInfo
         }
         else
         {
-            info = new PdfFontInfo(subtype, 1, file, font);
+            info = new PdfFontInfo(subtype, 1, file, font, builtinEncoding);
         }
 
-        if (file.Resolve(font["ToUnicode"]) is CosStream map && file.DecodeStream(map, out _) is { } data)
-        {
-            ReadToUnicode(data, info._unicode);
-        }
-
+        info._toUnicode = ToUnicode(file, font["ToUnicode"]);
         foreach (var (code, name) in info._glyphNames)
         {
-            if (!info._unicode.ContainsKey(code) && Encodings.GlyphToUnicode(name) is { } text)
+            if (info._toUnicode?.ContainsKey(code) != true && Encodings.GlyphToUnicode(name) is { } text)
             {
-                info._unicode[code] = text;
+                info._namedText[code] = text;
             }
-        }
-
-        foreach (var (code, text) in info._unicode.OrderBy(e => e.Key))
-        {
-            if (!info._codes.TryGetValue(text, out var codes))
-            {
-                info._codes[text] = codes = [];
-            }
-
-            codes.Add(code);
         }
 
         return info;
@@ -85,10 +81,10 @@ internal sealed class PdfFontInfo
         _cidWidths = widths;
     }
 
-    private PdfFontInfo(string subtype, int codeLength, PdfFile file, CosDict font)
+    private PdfFontInfo(string subtype, int codeLength, PdfFile file, CosDict font, Func<int, string?>? builtinEncoding)
         : this(subtype, codeLength)
     {
-        ReadGlyphNames(file, font, subtype, _glyphNames);
+        ReadGlyphNames(file, font, subtype, _glyphNames, builtinEncoding);
         if (subtype == "Type3")
         {
             _charProcs = file.ResolveDict(font["CharProcs"])?.Entries.Keys.ToHashSet(StringComparer.Ordinal);
@@ -149,7 +145,8 @@ internal sealed class PdfFontInfo
         return _simpleWidths is not null && code < 256 && _simpleWidths[code] >= 0 ? _simpleWidths[code] / 1000.0 : null;
     }
 
-    public string? Unicode(uint code) => _unicode.GetValueOrDefault(code);
+    public string? Unicode(uint code) =>
+        _toUnicode is not null && _toUnicode.TryGetValue(code, out var text) ? text : _namedText.GetValueOrDefault(code);
 
     /// <summary>Whether a code draws a glyph. Only Type 3 fonts can tell; for others it is checked elsewhere.</summary>
     public bool HasGlyph(uint code) =>
@@ -229,13 +226,53 @@ internal sealed class PdfFontInfo
         return codes;
     }
 
-    private IReadOnlyList<uint> CodesFor(string text) => _codes.TryGetValue(text, out var codes) ? codes : [];
+    /// <summary>The lowest code that stands for <paramref name="text"/>, the one PDFium's reverse lookup finds.</summary>
+    public uint? FirstCodeFor(string text) => CodesFor(text) is [var code, ..] ? code : null;
 
-    private static void ReadGlyphNames(PdfFile file, CosDict font, string subtype, Dictionary<uint, string> names)
+    /// <summary>A code whose one glyph draws all of <paramref name="text"/> (for example a ligature), preferring <paramref name="preferred"/>.</summary>
+    public uint? CodeFor(string text, IReadOnlySet<uint> preferred)
+    {
+        var usable = CodesFor(text).Where(HasGlyph).ToList();
+        return usable.Count == 0 ? null : usable.FirstOrDefault(preferred.Contains, usable[0]);
+    }
+
+    private IReadOnlyList<uint> CodesFor(string text) => (_codes ??= IndexCodes()).TryGetValue(text, out var codes) ? codes : [];
+
+    /// <summary>The codes that stand for each text, lowest first. Only edits need them, so viewing a page doesn't build them.</summary>
+    private Dictionary<string, List<uint>> IndexCodes()
+    {
+        var index = new Dictionary<string, List<uint>>(StringComparer.Ordinal);
+        IEnumerable<KeyValuePair<uint, string>> texts = _toUnicode is null ? _namedText : _toUnicode.Concat(_namedText);
+        foreach (var (code, text) in texts.OrderBy(e => e.Key))
+        {
+            Add(text, code);
+
+            // PDFium reads the ligatures U+FB00 to U+FB06 as their letters, for example "fi".
+            if (Encodings.ExpandLigatures(text) is var expanded && expanded != text)
+            {
+                Add(expanded, code);
+            }
+        }
+
+        return index;
+
+        void Add(string text, uint code)
+        {
+            if (!index.TryGetValue(text, out var codes))
+            {
+                index[text] = codes = [];
+            }
+
+            codes.Add(code);
+        }
+    }
+
+    private static void ReadGlyphNames(PdfFile file, CosDict font, string subtype, Dictionary<uint, string> names, Func<int, string?>? builtin)
     {
         string? baseEncoding = null;
         CosArray? differences = null;
-        switch (file.Resolve(font["Encoding"]))
+        var encoding = file.Resolve(font["Encoding"]);
+        switch (encoding)
         {
             case CosName name:
                 baseEncoding = name.Value;
@@ -247,15 +284,9 @@ internal sealed class PdfFontInfo
         }
 
         var baseFont = file.ResolveName(font["BaseFont"]) ?? string.Empty;
-        Func<int, string?>? table = baseEncoding switch
-        {
-            "WinAnsiEncoding" => Encodings.WinAnsiName,
-            "MacRomanEncoding" => Encodings.MacRomanName,
-            "StandardEncoding" => Encodings.StandardName,
-            null when subtype is "Type1" or "MMType1" && !baseFont.Contains("Symbol", StringComparison.Ordinal)
-                && !baseFont.Contains("Dingbats", StringComparison.Ordinal) => Encodings.StandardName,
-            _ => null,
-        };
+        var table = subtype is "Type1" or "MMType1"
+            ? Type1BaseEncoding(file, font, encoding, baseFont, builtin)
+            : Predefined(baseEncoding) ?? (baseEncoding == "StandardEncoding" ? Encodings.StandardName : null);
         if (table is not null)
         {
             for (var code = 0; code < 256; code++)
@@ -279,6 +310,101 @@ internal sealed class PdfFontInfo
                     names[(uint)next++] = name.Value;
                     break;
             }
+        }
+    }
+
+    /// <summary>
+    /// The encoding PDFium starts from for a Type 1 font (cpdf_simplefont.cpp, LoadCommon and
+    /// LoadPDFEncoding): StandardEncoding for a nonsymbolic font, and for a symbolic one the
+    /// encoding of its embedded program, or WinAnsiEncoding when it isn't embedded. A named
+    /// encoding replaces that, except StandardEncoding, which PDFium ignores. Null when unknown.
+    /// </summary>
+    private static Func<int, string?>? Type1BaseEncoding(PdfFile file, CosDict font, CosObject? encoding, string baseFont, Func<int, string?>? builtin)
+    {
+        var descriptor = file.ResolveDict(font["FontDescriptor"]);
+        if (baseFont.Contains("Symbol", StringComparison.Ordinal) || baseFont.Contains("Dingbats", StringComparison.Ordinal))
+        {
+            // PDFium has encodings of its own for these.
+            return Predefined(encoding is CosName n ? n.Value : null);
+        }
+
+        var symbolic = ((int)(file.ResolveNumber(descriptor?["Flags"]) ?? 0) & 4) != 0;
+        var embedded = descriptor is not null && (descriptor["FontFile"] ?? descriptor["FontFile2"] ?? descriptor["FontFile3"]) is not null;
+        switch (encoding)
+        {
+            case null:
+                if (!embedded && symbolic)
+                {
+                    return Encodings.WinAnsiName;
+                }
+
+                break;
+            case CosName name when name.Value is "WinAnsiEncoding" or "MacRomanEncoding" or "MacExpertEncoding" or "PDFDocEncoding":
+                // PDFium reads MacExpertEncoding here as WinAnsiEncoding; it has no table of PDFDocEncoding names.
+                return name.Value == "MacExpertEncoding" ? Encodings.WinAnsiName : Predefined(name.Value);
+            case CosDict dict:
+                if (file.ResolveName(dict["BaseEncoding"]) is "WinAnsiEncoding" or "MacRomanEncoding" or "MacExpertEncoding" or "PDFDocEncoding")
+                {
+                    return Predefined(file.ResolveName(dict["BaseEncoding"]));
+                }
+
+                if (!embedded && symbolic)
+                {
+                    return Encodings.StandardName;
+                }
+
+                break;
+        }
+
+        // Fonts whose program PaperKnife can't read are taken to use StandardEncoding.
+        return symbolic ? builtin ?? EmbeddedEncoding(file, descriptor) ?? Encodings.StandardName : Encodings.StandardName;
+    }
+
+    private static Func<int, string?>? Predefined(string? name) => name switch
+    {
+        "WinAnsiEncoding" => Encodings.WinAnsiName,
+        "MacRomanEncoding" => Encodings.MacRomanName,
+        _ => null,
+    };
+
+    /// <summary>
+    /// The builtin encoding of an embedded Type 1 program, from its cleartext part alone. Read once
+    /// per program, however many fonts share it.
+    /// </summary>
+    private static Func<int, string?>? EmbeddedEncoding(PdfFile file, CosDict? descriptor)
+    {
+        var entry = descriptor?["FontFile"];
+        return entry is CosRef reference ? file.Derived("Type1Encoding", reference.Number, Read) : Read();
+
+        Func<int, string?>? Read()
+        {
+            if (file.Resolve(entry) is not CosStream stream
+                || file.ResolveNumber(stream.Dict["Length1"]) is not { } length1 || length1 is < 1 or > Fonts.Type1Font.MaxCleartext
+                || file.DecodeStreamPrefix(stream, (int)length1, Fonts.Type1Font.MaxProgram) is not { } cleartext
+                || Fonts.Type1Font.ReadEncoding(cleartext) is not { } encoding)
+            {
+                return null;
+            }
+
+            return encoding.Standard ? Encodings.StandardName : code => encoding.Names.GetValueOrDefault(code);
+        }
+    }
+
+    /// <summary>A ToUnicode map by code, read once per map, however many fonts share it.</summary>
+    private static IReadOnlyDictionary<uint, string>? ToUnicode(PdfFile file, CosObject? entry)
+    {
+        return entry is CosRef reference ? file.Derived("ToUnicode", reference.Number, Read) : Read();
+
+        Dictionary<uint, string>? Read()
+        {
+            if (file.Resolve(entry) is not CosStream stream || file.DecodeStream(stream, out _) is not { } data)
+            {
+                return null;
+            }
+
+            var map = new Dictionary<uint, string>();
+            ReadToUnicode(data, map);
+            return map;
         }
     }
 

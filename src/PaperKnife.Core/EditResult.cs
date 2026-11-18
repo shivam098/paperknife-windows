@@ -28,7 +28,8 @@ public sealed class EditResult
         string message,
         IReadOnlyList<string> warnings,
         IReadOnlyList<string> unsupportedCharacters,
-        PdfTextRun? textRun)
+        PdfTextRun? textRun,
+        IReadOnlyList<string>? details = null)
     {
         Status = status;
         Rejection = rejection;
@@ -36,6 +37,7 @@ public sealed class EditResult
         Warnings = warnings;
         UnsupportedCharacters = unsupportedCharacters;
         TextRun = textRun;
+        Details = details ?? [];
     }
 
     public EditStatus Status { get; }
@@ -47,14 +49,17 @@ public sealed class EditResult
 
     public IReadOnlyList<string> Warnings { get; }
 
+    /// <summary>For applied edits: more about what changed that isn't a warning, such as a font PaperKnife completed.</summary>
+    public IReadOnlyList<string> Details { get; }
+
     /// <summary>For <see cref="EditRejection.UnsupportedCharacters"/>: the characters that can't be used.</summary>
     public IReadOnlyList<string> UnsupportedCharacters { get; }
 
     /// <summary>For applied text edits: the edited run as it exists in the committed document.</summary>
     public PdfTextRun? TextRun { get; }
 
-    internal static EditResult Applied(string message, IReadOnlyList<string>? warnings = null, PdfTextRun? textRun = null) =>
-        new(EditStatus.Applied, EditRejection.None, message, warnings ?? [], [], textRun);
+    internal static EditResult Applied(string message, IReadOnlyList<string>? warnings = null, PdfTextRun? textRun = null, IReadOnlyList<string>? details = null) =>
+        new(EditStatus.Applied, EditRejection.None, message, warnings ?? [], [], textRun, details);
 
     internal static EditResult NoChange(string message) =>
         new(EditStatus.NoChange, EditRejection.None, message, [], [], null);

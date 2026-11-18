@@ -726,7 +726,8 @@ public sealed partial class MainWindow : Window
         {
             case EditStatus.Applied:
                 var warned = result.Warnings.Count > 0;
-                ShowMessage(warned ? InfoBarSeverity.Warning : InfoBarSeverity.Success, result.Message, warned ? string.Join(" ", result.Warnings) : null);
+                var body = string.Join(" ", result.Warnings.Concat(result.Details));
+                ShowMessage(warned ? InfoBarSeverity.Warning : InfoBarSeverity.Success, result.Message, body.Length > 0 ? body : null);
                 break;
             case EditStatus.NoChange:
                 ShowMessage(InfoBarSeverity.Informational, result.Message, null);

@@ -16,6 +16,7 @@ next to the app, into `licenses\<component>\`.
 | [WebView2 SDK](https://aka.ms/webview2) (NuGet `Microsoft.Web.WebView2`, a WinUI dependency) | 1.0.3719.77 | BSD-3-Clause ([text](third_party/webview2/licenses/LICENSE.txt), [notices](third_party/webview2/licenses/NOTICE.txt)) |
 | [C#/WinRT](https://github.com/microsoft/CsWinRT) runtime (`WinRT.Runtime.dll`) | 2.2.0 | MIT ([text](third_party/cswinrt/licenses/LICENSE.txt)) |
 | Windows SDK projection for .NET (`Microsoft.Windows.SDK.NET.dll`, from the .NET SDK) | 10.0.19041.55 | [Microsoft Software License Terms for the Windows SDK](https://aka.ms/WinSDKLicenseURL) |
+| [AMS Type 1 Computer Modern fonts](https://ctan.org/pkg/amsfonts) (`cm*.pfb`, compiled into `PaperKnife.Core.dll`, unmodified; see [`third_party/amsfonts`](third_party/amsfonts/README.md)) | amsfonts 3.04 | SIL Open Font License 1.1 ([text](third_party/amsfonts/licenses/OFL.txt), [FAQ](third_party/amsfonts/licenses/OFL-FAQ.txt)); Copyright (c) 1997, 2009, American Mathematical Society |
 
 ### Libraries compiled into PDFium
 
@@ -59,4 +60,5 @@ portable ZIPs contain no Inno Setup code.
 | [xUnit.net v3](https://github.com/xunit/xunit) | Apache-2.0 |
 
 Tests generate their PDFs at run time and may load fonts installed on the machine (for example
-Arial); no font data or third-party documents are stored in this repository.
+Arial). The only font data in this repository are the AMS fonts above; no third-party documents
+are stored in it.

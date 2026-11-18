@@ -11,3 +11,8 @@ third_party/pdfium/licenses/ for their notices and license texts.
 
 Portions of this software are copyright (c) The FreeType Project
 (https://freetype.org). All rights reserved.
+
+This product includes the AMS Type 1 Computer Modern fonts (amsfonts 3.04),
+Copyright (c) 1997, 2009, American Mathematical Society (http://www.ams.org),
+licensed under the SIL Open Font License, Version 1.1 (see
+third_party/amsfonts/licenses/OFL.txt).

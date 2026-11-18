@@ -35,11 +35,17 @@ Milestones are ordered by value to users and by risk. Each milestone ends with a
   content stream and are appended to the file as an incremental update, keeping every other byte
   (letter and word spacing, print colors, inline images, shadings, Type 3 fonts). PaperKnife
   reads the file structure and content itself and leaves anything uncertain to PDFium's page
-  rewrite. Still to do: encrypted files, keeping kerning inside the edited text, and compacting
-  the file when it is saved.
+  rewrite. Text the edit keeps keeps its kerning and word gaps, and spaces in fonts without a
+  space glyph (TeX's) are drawn as gaps. Still to do: encrypted files, and compacting the file
+  when it is saved.
 - **Fallback fonts with consent.** When the document's font lacks a character, offer to use a
   similar installed font, embedding only the glyphs used and only if the font's license allows
-  embedding.
+  embedding. ✅ Done for the fonts of PDFs made with LaTeX: when a subset of a Type 1 Computer
+  Modern font lacks a letter, the edited text is drawn with a complete copy of PaperKnife's
+  identical font (AMS, SIL Open Font License), and the PDF's own font stays as it was. Still to
+  do: Latin Modern and CM-Super (T1-encoded LaTeX), TrueType and OpenType subsets (for example
+  from Word, from fonts installed on Windows when their license allows embedding), and similar
+  fonts for everything else.
 - ✅ Edit whole lines in PDFs that draw text one character or word at a time: consecutive text
   objects are grouped into runs, only the changed characters are rewritten and the rest of the
   line moves to fit. Still to do: lines split across fonts (for example the "fi" ligature in PDFs

@@ -60,6 +60,36 @@ internal static class Encodings
     /// <summary>MacRomanEncoding, for the ASCII range only.</summary>
     public static string? MacRomanName(int code) => code is >= 32 and <= 126 ? WinAnsiName(code) : null;
 
+    /// <summary>
+    /// Text with the Latin ligatures U+FB00 to U+FB06 replaced by their letters, the way PDFium's
+    /// text extraction reports them (cpdf_textpage.cpp, AddCharInfo).
+    /// </summary>
+    public static string ExpandLigatures(string text)
+    {
+        if (!text.Any(c => c is >= '\uFB00' and <= '\uFB06'))
+        {
+            return text;
+        }
+
+        var builder = new System.Text.StringBuilder(text.Length + 4);
+        foreach (var c in text)
+        {
+            builder.Append(c switch
+            {
+                '\uFB00' => "ff",
+                '\uFB01' => "fi",
+                '\uFB02' => "fl",
+                '\uFB03' => "ffi",
+                '\uFB04' => "ffl",
+                '\uFB05' => "\u017Ft",
+                '\uFB06' => "st",
+                _ => c.ToString(),
+            });
+        }
+
+        return builder.ToString();
+    }
+
     /// <summary>The text a glyph name stands for (Adobe Glyph List conventions), or null.</summary>
     public static string? GlyphToUnicode(string name)
     {
@@ -120,6 +150,8 @@ internal static class Encodings
             ("fraction", "\u2044"), ("ring", "\u02DA"), ("ogonek", "\u02DB"), ("caron", "\u02C7"),
             ("dotaccent", "\u02D9"), ("hungarumlaut", "\u02DD"), ("breve", "\u02D8"), ("Delta", "\u2206"),
             ("Omega", "\u2126"), ("pi", "\u03C0"), ("mu", "\u00B5"), ("rupee", "\u20B9"), ("uni20B9", "\u20B9"),
+            ("Gamma", "\u0393"), ("Theta", "\u0398"), ("Lambda", "\u039B"), ("Xi", "\u039E"), ("Pi", "\u03A0"),
+            ("Sigma", "\u03A3"), ("Upsilon", "\u03A5"), ("Phi", "\u03A6"), ("Psi", "\u03A8"),
         })
         {
             map.TryAdd(name, text);

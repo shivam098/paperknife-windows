@@ -81,7 +81,9 @@ sequenceDiagram
      and PDFium returns a glyph outline that differs from the font's "missing glyph" outline
      (for spaces, an empty outline, because a space that draws a shape is the missing-glyph box).
      PDFium can't outline the glyphs of Type 3 fonts, which store each glyph as a drawing; for
-     those, the character must have a glyph procedure.
+     those, the character must have a glyph procedure. In the content stream, a space the font
+     can't draw becomes a gap, and a TeX font that lacks a letter may be completed (see
+     [Spaces, kerning and TeX fonts](#spaces-kerning-and-tex-fonts)).
 2. **Apply** the smallest change (see [Editing a run](#editing-a-run)), in one of two ways:
    - **In the content stream**, whenever PaperKnife can read the page's content with certainty
      (see [Editing the content stream](#editing-the-content-stream)). Only the run's text
@@ -247,7 +249,8 @@ page's content stream itself whenever it can read the file with certainty. The c
    0.01 point, with the same matrix). Blocks that change the graphics state (`q`, `Q`, `cm`) or
    text inside `/ActualText` marked content are left to PDFium.
 4. **Encode the new text** with the font's own character codes, found through its ToUnicode map,
-   or its encoding and glyph names. Characters the font lacks are refused, as before.
+   or its encoding and glyph names (see [Spaces, kerning and TeX fonts](#spaces-kerning-and-tex-fonts)).
+   Characters the font lacks are refused, as before.
 5. **Rewrite the blocks.** Each affected block gets an explicit `Tm` before every text-showing
    operation, so no position depends on another operation's width. The edited operation shows the
    new codes, removed ones are left out, and the rest of the run is shifted along the baseline.
@@ -266,7 +269,71 @@ compressed: a few kilobytes for a typical page, more for pages with a lot of vec
 PaperKnife's reader also caps what it decodes (64 MB per page) and the work it spends on a font's
 width and character maps, and it refuses object streams nested in object streams, as PDFium
 does. Beyond those limits it treats the data as unknown and leaves the edit to PDFium, or uses
-PDFium's own glyph widths.
+PDFium's own glyph widths. It reads each font, character map and font program once, however
+many names, fonts or pages refer to it, and keeps it only as long as the pages read with it
+(the last 16 viewed); of a Type 1 program it reads only the cleartext part it needs. Fonts
+share their character maps rather than copying them, and the reverse lookup from text to codes
+is built only for the fonts an edit uses.
+
+### Spaces, kerning and TeX fonts
+
+TeX sets text differently from word processors, and PDFs made with LaTeX are common (résumés,
+papers). `Editing/GlyphPlanner.cs` and `Fonts/` handle what that takes.
+
+- **Kept text keeps its spacing.** The glyphs of the edited operations are matched to the text
+  PDFium reads for them, which has a space wherever PDFium reads a `TJ` adjustment as one (in
+  `cpdf_textpage.cpp`: when the gap is at least half the font's space, or, without a usable space
+  glyph, a fraction of the next glyph's width) and ligatures (U+FB00 to U+FB06) as their letters.
+  The old and new text are then aligned (a longest common subsequence), and text the edit keeps
+  keeps its codes, its kerning and its gaps, so only what changed looks different. If the glyphs
+  don't match what PDFium reads, nothing is kept and the new text is encoded afresh.
+- **Codes are read as PDFium reads them.** For a Type 1 font, PDFium starts from StandardEncoding
+  when the font is nonsymbolic, and from the encoding built into the embedded program when it
+  is symbolic, as TeX's fonts are (`cpdf_simplefont.cpp`, `cpdf_type1font.cpp`); it ignores an
+  `/Encoding` of `/StandardEncoding`. PaperKnife does the same, reading the built-in encoding
+  from the program's cleartext part, so in PDFs without a ToUnicode map TeX's ligatures, dashes
+  and quotes are read correctly.
+- **Spaces become gaps when the font has no space.** TeX fonts have no space glyph: TeX leaves a
+  gap between words, which PDFium reads as a space. When the font can't draw a space (PDFium
+  finds no space glyph, or a Type 3 font has no glyph procedure for it), a new space becomes a
+  `TJ` adjustment: the gap it replaces, or else the median gap PDFium reads as a space in this
+  font on the page, or else a third of an em (TeX's usual word space). A gap is widened, if
+  needed, to 1.25 times PDFium's threshold for the next glyph, so the space still reads back.
+  Only U+0020 and U+00A0 become gaps; other spaces need a glyph.
+- **New letters come from a complete copy of the font.** pdfTeX embeds only the glyphs a
+  document uses, so an edit often needs a letter the PDF lacks. PaperKnife ships the Type 1
+  Computer Modern fonts of the AMS (`third_party/amsfonts`, SIL Open Font License), the versions
+  TeX distributions embed. When a subset of one of them lacks a letter, `FontCompletion` adds a
+  font of its own to the edited page: the whole, unmodified program, with the PDF font's
+  encoding, character map and widths (and the glyphs' own widths for codes that had none, or a
+  width of 0 for a glyph the subset leaves out, as some tools write). Only
+  the edited text operation selects it (`/PK… size Tf`, then the PDF's font again), so the PDF's
+  own font and everything drawn with it, on every page, stay exactly as they were. The page
+  gets a new version of its dictionary with resources of its own, so pages that share or
+  inherit resources don't change. A later edit reuses a copy on the page only if it is the
+  same in every respect: program, encoding, character map, flags and widths. Line grouping
+  treats two embedded fonts with the same name as one typeface, so the edited text stays in its
+  line. The copy takes the next three object numbers; a file whose numbers already reach
+  PDFium's limit (about 25 million, `kMaxObjectNumber` in `cpdf_parser.h`) is refused.
+- **The copy must match the subset.** So that letters an edit keeps look the same, `Type1Font`
+  decrypts both programs and requires the subset's font matrix, paint type, glyph encryption,
+  hinting values and encoding entries, and every glyph program it has, to be identical in
+  PaperKnife's font. `CharStringAnalyzer` runs each glyph program (Type 1 programs have no
+  branches) to find the subroutines it calls, directly or through others, including hint
+  replacement as FreeType's `t1decode.c` runs it; each of those must be identical too, since
+  subsetters replace subroutines nothing calls by stubs. The reader refuses anything unusual (a
+  key given twice, a glyph or subroutine defined twice, an unexpected token among the glyphs,
+  multiple master fonts) rather than guess how a renderer reads it, runs in a single pass, and
+  caps what it reads (256 KB of cleartext, 4 MB in all, a step budget for the analysis).
+- **Only where viewers agree.** A copy is made only for symbolic fonts whose `/Encoding` is
+  absent or lists only `/Differences`: there, PDFium and the PDF specification agree that each
+  code selects the glyph the program's own encoding (or `/Differences`) names. After the edit,
+  the saved copy is opened: PDFium must draw the edited text with the embedded copy (for a font
+  it can't load it substitutes one of its own, which may draw every letter), and every new
+  letter must have a glyph in it. The edit reports the copy; the file grows by the font's size
+  (about 30 KB).
+- Limits: only these Type 1 fonts can be copied, not Latin Modern or the T1-encoded CM-Super
+  fonts, nor fonts in other formats.
 
 ## Permissions
 
@@ -312,7 +379,19 @@ low-privilege process is on the roadmap.
 - Content edits are tested on the same constructs and also on object and cross-reference
   streams, pages drawn by several content streams or sharing one with another page, line
   operators (`'`, `"`, `TD`, `TL`), and text placed right after other text. They must keep every
-  byte of the original file and the edited text's own color and spacing.
+  byte of the original file and the edited text's own color and spacing. Kerning and gaps kept
+  from the old text, and spaces drawn as gaps, are checked in the written content.
+- TeX fonts are tested with a subset of CMR10 cut from the bundled copy at run time: spaces,
+  drawing new letters with a copy of the font (the PDF's font untouched, the copy reused, the
+  line kept together, widths for letters the PDF gives a width of 0, object numbers up to
+  PDFium's limit), ligatures and kerning without a ToUnicode map, and refusing subsets that
+  differ from PaperKnife's font or are crafted to be read differently (a changed glyph, a stray
+  token, a glyph defined twice, a stubbed subroutine a glyph calls), nonsymbolic fonts, and a
+  program full of junk, which must be read quickly, as must a page that gives one font a
+  thousand names.
+- Memory tests, which run on their own, page through documents whose fonts have large character
+  maps: shared by every page's font, one copy must stay in memory; one per page, only those of
+  the last pages viewed.
 - CI runs on Windows x64 and Windows on Arm.
 
 ## Decisions
@@ -322,6 +401,7 @@ low-privilege process is on the roadmap.
 | WinUI 3 rather than WPF | Microsoft's recommended UI framework for new desktop apps; native on Arm64; builds with the .NET SDK alone. |
 | PDFium rather than MuPDF | Permissive license compatible with Apache-2.0 and app stores; mature rendering. |
 | PaperKnife's own PDF reader and incremental writer for text edits, rather than a PDF library | An edit changes only the affected text operations and appends an update, so every other byte of the file survives. A reader that refuses anything uncertain stays small and predictable, and PDFium's page rewrite remains for the files it refuses. |
+| New letters in TeX fonts from a complete copy of the identical font, used only by the edited text, rather than replacing the PDF's font or substituting a similar one | The new letters are the same design as the rest of the text, and as the PDF's own font is never changed, nothing else in the document can change, whatever the font contains. Other fonts still need a fallback with the user's consent (roadmap M2). |
 | Whole-document snapshots for undo | Exact undo with simple code. Large documents pay in memory and time; incremental history is planned. |
 | Unpackaged, self-contained app with an Inno Setup installer | Nothing else to install (.NET and the Windows App SDK runtime are included), installs per user without administrator rights, and one installer serves x64 and Arm64. An MSIX package for the Microsoft Store can come later. |
 | The `Microsoft.WindowsAppSDK.WinUI` component rather than the `Microsoft.WindowsAppSDK` meta-package | The meta-package also ships AI and machine-learning runtimes (about 40 MB per architecture) that PaperKnife doesn't use. |

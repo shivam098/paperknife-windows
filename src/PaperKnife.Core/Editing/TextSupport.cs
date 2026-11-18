@@ -53,11 +53,15 @@ internal static unsafe class TextSupport
         var missing = checkGlyphs ? FindMissingGlyphs(font, text) : [];
         if (missing.Count > 0)
         {
-            return new($"The font “{fontName}” in this PDF doesn't contain: {string.Join(' ', missing)}", missing);
+            return new(MissingMessage(fontName, missing), missing);
         }
 
         return TextSupportResult.Supported;
     }
+
+    /// <summary>The message for characters a font can't draw, naming the ones that are invisible.</summary>
+    public static string MissingMessage(string fontName, IEnumerable<string> characters) =>
+        $"The font “{fontName}” in this PDF doesn't contain: {string.Join(", ", characters.Select(Describe))}";
 
     private static bool IsLayoutCharacter(char c) =>
         char.IsControl(c)
@@ -152,15 +156,17 @@ internal static unsafe class TextSupport
     }
 
     private static List<string> Distinct(string text, Func<char, bool> predicate) =>
-        text.Where(predicate).Select(Describe).Distinct().ToList();
+        text.Where(predicate).Select(c => Describe(c.ToString())).Distinct().ToList();
 
-    private static string Describe(char c) => c switch
+    private static string Describe(string text) => text switch
     {
-        '\n' or '\r' or '\u2028' => "line break",
-        '\u2029' => "paragraph break",
-        '\t' => "tab",
-        _ when char.IsControl(c) || CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.Format
+        "\n" or "\r" or "\u2028" => "line break",
+        "\u2029" => "paragraph break",
+        "\t" => "tab",
+        " " => "space",
+        "\u00A0" => "no-break space",
+        [var c] when char.IsWhiteSpace(c) || char.IsControl(c) || CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.Format
             => string.Create(CultureInfo.InvariantCulture, $"U+{(int)c:X4}"),
-        _ => c.ToString(),
+        _ => text,
     };
 }

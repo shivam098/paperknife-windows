@@ -253,6 +253,9 @@ public sealed class DocumentSession : IDisposable
 
             PdfSnapshot? candidate = null;
             RunChange? change = null;
+            string? addedFont = null;
+            string? glyphsToCheck = null;
+            string? copyFont = null;
             if (GetContentPage(pageIndex) is { } content)
             {
                 ContentEditResult prepared;
@@ -274,6 +277,9 @@ public sealed class DocumentSession : IDisposable
                 {
                     candidate = PdfSnapshot.FromBytes(prepared.Candidate);
                     change = prepared.Change!;
+                    addedFont = prepared.AddedFont;
+                    glyphsToCheck = prepared.GlyphsToCheck;
+                    copyFont = prepared.CopyFont;
                 }
             }
 
@@ -290,7 +296,7 @@ public sealed class DocumentSession : IDisposable
             PdfDocument? verified = PdfDocument.Load(candidate!, _password);
             try
             {
-                var problem = VerifyTextEdit(verified, candidate!, pageCount, change, countsBefore, before, out var edited, out var warnings);
+                var problem = VerifyTextEdit(verified, candidate!, pageCount, change, countsBefore, before, glyphsToCheck, copyFont, out var edited, out var warnings);
                 if (problem is not null)
                 {
                     return EditResult.Rejected(EditRejection.CollateralChange, problem);
@@ -301,7 +307,10 @@ public sealed class DocumentSession : IDisposable
                 var message = change.MovedRest
                     ? "Text updated, and the rest of the line moved to fit. Verified: nothing else on this page changed."
                     : "Text updated. Verified: nothing else on this page changed.";
-                return EditResult.Applied(message, warnings, edited);
+                List<string> details = addedFont is null
+                    ? []
+                    : [$"This PDF contained only the letters it used from the font “{addedFont}”, so PaperKnife added a complete copy of that font from its own fonts for the new text. The rest of the document still uses the PDF's own font."];
+                return EditResult.Applied(message, warnings, edited, details);
             }
             finally
             {
@@ -621,6 +630,8 @@ public sealed class DocumentSession : IDisposable
         return null;
     }
 
+    /// <param name="glyphsToCheck">New characters that must have a glyph in the edited text's font in the candidate (the font changed with the edit).</param>
+    /// <param name="copyFont">The name of the complete copy of a font the edited text is drawn with, if any (see <see cref="Fonts.FontCompletion"/>).</param>
     private string? VerifyTextEdit(
         PdfDocument verified,
         PdfSnapshot candidate,
@@ -628,6 +639,8 @@ public sealed class DocumentSession : IDisposable
         RunChange change,
         PageObjectCounts countsBefore,
         RenderedBitmap before,
+        string? glyphsToCheck,
+        string? copyFont,
         out PdfTextRun? edited,
         out List<string> warnings)
     {
@@ -658,6 +671,17 @@ public sealed class DocumentSession : IDisposable
                 || !TextEquivalence.AreEquivalentIgnoringSpacing(stored.Text, edit.NewText))
             {
                 return "The new text didn't survive saving, so the edit was cancelled.";
+            }
+
+            // A font PDFium can't load is replaced by one of its own, which may draw every letter.
+            if (copyFont is not null && (!stored.IsEmbedded || Fonts.Type1Font.BaseName(stored.FontName) != copyFont))
+            {
+                return "PaperKnife couldn't confirm that the new text uses the font it added, so the edit was cancelled.";
+            }
+
+            if (glyphsToCheck is { Length: > 0 } && !TextSupport.Check(stored.Font, original.FontName, glyphsToCheck).IsSupported)
+            {
+                return "PaperKnife couldn't confirm that the font draws the new letters, so the edit was cancelled.";
             }
 
             // The rest of the run was placed after the advance widths of the new text, so PDFium
@@ -958,7 +982,9 @@ public sealed class DocumentSession : IDisposable
         {
             if (_contentPages.Count >= 16)
             {
+                // The fonts and character maps read for those pages go with them.
                 _contentPages.Clear();
+                _contentFile.ForgetDerived();
             }
 
             try

@@ -46,6 +46,7 @@
     <None Include="..\..\third_party\windowsappsdk\licenses\**\*" Link="licenses\windowsappsdk\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\third_party\webview2\licenses\**\*" Link="licenses\webview2\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\third_party\cswinrt\licenses\**\*" Link="licenses\cswinrt\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\third_party\amsfonts\licenses\**\*" Link="licenses\amsfonts\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

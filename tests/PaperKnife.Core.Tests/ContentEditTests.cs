@@ -1,4 +1,6 @@
 using System.Text;
+using PaperKnife.Core.Content;
+using PaperKnife.Core.Syntax;
 
 namespace PaperKnife.Core.Tests;
 
@@ -64,16 +66,46 @@ public sealed class ContentEditTests
         AssertAppended(original, session.CurrentSnapshot);
     }
 
-    [Fact]
-    public void ReplaceText_InType3Font_WithALetterTheFontLacks_IsRejected()
+    [Theory]
+    [InlineData("abd")]
+    [InlineData("ab d")] // the space is drawn as a gap, so only the letter is missing
+    public void ReplaceText_InType3Font_WithALetterTheFontLacks_IsRejected(string text)
     {
         using var session = Open(RawPdf.SinglePage(RawPdf.BaseContent + RawPdf.Type3Text));
 
-        var result = session.ReplaceText(0, Find(session, "abc").ObjectIndex, "abd");
+        var result = session.ReplaceText(0, Find(session, "abc").ObjectIndex, text);
 
         Assert.Equal(EditRejection.UnsupportedCharacters, result.Rejection);
         Assert.Equal(["d"], result.UnsupportedCharacters);
         Assert.False(session.IsModified);
+    }
+
+    [Fact]
+    public void ReplaceText_WithASpaceTheFontCannotDraw_LeavesAGap()
+    {
+        // The font has no space glyph, like TeX's fonts; TeX leaves a gap between words instead,
+        // which PDFium reads as a space. With no gaps on the page to copy, it is a third of an em.
+        using var session = Open(RawPdf.SinglePage(RawPdf.BaseContent + RawPdf.Type3Text));
+
+        var result = session.ReplaceText(0, Find(session, "abc").ObjectIndex, "ab ca");
+
+        Assert.Equal(EditStatus.Applied, result.Status);
+        Assert.Equal("ab ca", result.TextRun?.Text);
+        Assert.Matches(@"\[<6162> -333\.3+ <6361>\] TJ", PageContent(session));
+    }
+
+    [Fact]
+    public void ReplaceText_KeepsTheKerningAndGapsOfUnchangedText()
+    {
+        using var session = Open(RawPdf.SinglePage(RawPdf.BaseContent + RawPdf.GappedText));
+
+        var result = session.ReplaceText(0, Find(session, "ab ca").ObjectIndex, "ab cab c");
+
+        // The kerning after "a" and the gap after "b" are copied, and the new space gets the
+        // page's usual gap in this font.
+        Assert.Equal(EditStatus.Applied, result.Status);
+        Assert.Equal("ab cab c", result.TextRun?.Text);
+        Assert.Contains("[<61> 30 <62> -400 <636162> -400 <63>] TJ", PageContent(session), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -224,6 +256,13 @@ public sealed class ContentEditTests
     {
         Assert.True(edited.Length > original.Length);
         Assert.True(edited.Span.StartsWith(original.Span));
+    }
+
+    /// <summary>The first page's content, decoded.</summary>
+    private static string PageContent(DocumentSession session)
+    {
+        var file = PdfFile.TryOpen(session.CurrentSnapshot.Memory, out _)!;
+        return Encoding.Latin1.GetString(ContentPage.TryLoad(file, file.GetPages()!, 0)!.Content);
     }
 
     private static List<(byte R, byte G, byte B)> Pixels(DocumentSession session, PdfRect bounds)
