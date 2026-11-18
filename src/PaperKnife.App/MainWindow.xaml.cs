@@ -296,13 +296,17 @@ public sealed partial class MainWindow : Window
         await RenderPageAsync();
     }
 
-    private async void Apply_Click(object sender, RoutedEventArgs e) => await ApplyEditAsync();
+    private async void Apply_Click(object sender, RoutedEventArgs e) => await ApplyEditAsync(EditBox.Text, ApplyButton);
 
-    private async Task ApplyEditAsync()
+    private async void DeleteText_Click(object sender, RoutedEventArgs e) => await ApplyEditAsync(string.Empty, DeleteTextButton);
+
+    /// <param name="newText">The selected text's new text; empty deletes it.</param>
+    /// <param name="trigger">The button for this action, which must be enabled.</param>
+    private async Task ApplyEditAsync(string newText, Button trigger)
     {
         var session = _session;
         var run = _selected;
-        if (session is null || run is null || _busy || !ApplyButton.IsEnabled)
+        if (session is null || run is null || _busy || !trigger.IsEnabled)
         {
             return;
         }
@@ -317,8 +321,7 @@ public sealed partial class MainWindow : Window
             _signatureWarningAccepted = true;
         }
 
-        var newText = EditBox.Text;
-        SetBusy(true, "Applying and verifying…");
+        SetBusy(true, newText.Trim().Length == 0 ? "Deleting and verifying…" : "Applying and verifying…");
         EditResult result;
         try
         {
@@ -353,7 +356,7 @@ public sealed partial class MainWindow : Window
         if (e.Key == VirtualKey.Enter)
         {
             e.Handled = true;
-            await ApplyEditAsync();
+            await ApplyEditAsync(EditBox.Text, ApplyButton);
         }
         else if (e.Key == VirtualKey.Escape)
         {
@@ -798,11 +801,12 @@ public sealed partial class MainWindow : Window
         var changed = editable && !string.Equals(EditBox.Text, _selected!.Text, StringComparison.Ordinal);
         ApplyButton.IsEnabled = changed && idle;
         ResetButton.IsEnabled = changed && idle;
+        DeleteTextButton.IsEnabled = editable && idle;
         PageBlockedBar.IsOpen = open && _pageBlockers.Count > 0;
         PageBlockedBar.Message = string.Join(" ", _pageBlockers);
         EditHint.Text = _selected is null
             ? "Click any text on the page to select it."
-            : "Change the text, then press Enter or select Apply.";
+            : "Change the text, then press Enter or select Apply. To remove it, select Delete text.";
 
         var name = session is null ? null : Path.GetFileName(session.FilePath) ?? "Untitled";
         Title = name is null ? "PaperKnife" : $"{name}{(_state.IsModified ? " •" : string.Empty)} – PaperKnife";

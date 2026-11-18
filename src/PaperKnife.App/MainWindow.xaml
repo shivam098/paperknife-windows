@@ -115,6 +115,7 @@
           <StackPanel Orientation="Horizontal" Spacing="8">
             <Button x:Name="ApplyButton" Click="Apply_Click" Content="Apply" IsEnabled="False" Style="{StaticResource AccentButtonStyle}" />
             <Button x:Name="ResetButton" Click="Reset_Click" Content="Reset" IsEnabled="False" />
+            <Button x:Name="DeleteTextButton" Click="DeleteText_Click" Content="Delete text" IsEnabled="False" />
           </StackPanel>
           <TextBlock
               Foreground="{ThemeResource TextFillColorSecondaryBrush}"

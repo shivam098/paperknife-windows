@@ -91,11 +91,15 @@ sequenceDiagram
    - **By PDFium rewriting the page** otherwise, for example in encrypted files. PaperKnife first
      refuses pages with content PDFium can't write back (gradient shadings, unknown objects) and
      runs the **rewrite check**: the page is rewritten by PDFium with nothing changed (the
-     objects of the edited run are only marked as modified) and must render exactly as before.
-     This catches styling PDFium can't write back, including on the edited text itself, which
-     step 3 can't see because it hides that text. The change is then applied to a scratch copy
-     and the text read back: `FPDFText_SetText` silently turns characters it can't encode into
-     character code 0. The scratch copy is serialized with `FPDF_SaveAsCopy`.
+     objects of the edited run are only marked as modified) and must render exactly as before,
+     and every text object must keep its matrix and bounds. This catches styling PDFium can't
+     write back, including on the edited text itself, which step 3 can't see because it hides
+     that text, and on invisible text (for example the text layer of a scanned page), whose
+     letter spacing the rendering can't show. Deleting a whole line skips it: nothing of the
+     deleted text remains, and the checks after the change cover the rest of the page. The change
+     is then applied to a scratch copy and the text read back: `FPDFText_SetText` silently turns
+     characters it can't encode into character code 0. The scratch copy is serialized with
+     `FPDF_SaveAsCopy`.
 3. **Verify** by loading the candidate as a new document:
    - the page count is unchanged;
    - the edited page has the same number of objects of each kind as before, minus the text
@@ -117,7 +121,9 @@ sequenceDiagram
    - with the changed and moved objects hidden (`FPDFPageObj_SetIsActive`) in both the original
      and the candidate, the whole page renders the same at 144 dpi, allowing for anti-aliasing
      noise. Hiding the objects, rather than skipping their area, also checks whatever lies under
-     or over them.
+     or over them;
+   - when a whole line was deleted, every other text object keeps its matrix, bounds, rendering
+     mode and text, which also covers invisible text (see [Editing a run](#editing-a-run)).
 4. **Commit** or discard. A rejected edit returns a plain-language reason.
 
 Page commands (rotate, delete, move, append) follow the same pattern with checks suited to them.
@@ -206,8 +212,17 @@ old text ended. For example, in a line drawn one character per object, changing
 objects for `ustom` and moves `er` to the left.
 
 - Inserted text joins the object it follows or, after a gap, the object that comes next.
-- Deleting part of a line removes objects and moves the rest. Deleting a whole line isn't
-  supported yet.
+- Deleting part of a line removes objects and moves the rest. Deleting a whole line (empty new
+  text) removes every object of the run, spaces at its end included, and moves nothing; in the
+  content stream it needs no encoding, so it works in fonts PaperKnife can't write text in. As
+  nothing is drawn in its place, verification also requires every other text object on the page
+  to keep its matrix, bounds (which show letter and word spacing), rendering mode and text,
+  which covers invisible text (for example from OCR) that the page comparison can't see. Text
+  is compared as a reader sees it, because PDFium reads an object in the context of its
+  neighbours: a hyphen or soft hyphen ending a line reads as U+0002 only while the next line
+  follows, and a
+  copy drawn over other text, as for fake bold, reads as nothing until the copy above it is
+  deleted (so such text is deleted one copy at a time).
 - The run's trailing whitespace stays as it is.
 - In the content stream, both ends are computed from the character codes, the font's widths and
   the text's own character and word spacing. When PDFium rewrites the page, it lays out the new
@@ -375,12 +390,19 @@ low-privilege process is on the roadmap.
 - Tests cover the refusals for unsupported characters and layout, shadings, inline images,
   character and word spacing, CMYK colors, Type 3 fonts, changes under the edited text and author
   restrictions when PDFium rewrites the page, and check that a refused change leaves the document
-  unchanged. Refusals not yet covered: empty text and unknown page objects.
+  unchanged. Refusals not yet covered: unknown page objects.
 - Content edits are tested on the same constructs and also on object and cross-reference
   streams, pages drawn by several content streams or sharing one with another page, line
   operators (`'`, `"`, `TD`, `TL`), and text placed right after other text. They must keep every
   byte of the original file and the edited text's own color and spacing. Kerning and gaps kept
   from the old text, and spaces drawn as gaps, are checked in the written content.
+- Deleting whole lines is tested in the content stream and with PDFium's page rewrite, for a
+  line drawn letter by letter, a line shown with `'` among other lines, invisible text placed
+  right after the deleted text, text in a font PaperKnife can't write in (a predefined CJK
+  CMap), the line after a hyphenated one (with a hyphen or a soft hyphen) and fake bold text,
+  followed by undo; and, with PDFium's page rewrite, text whose own letter spacing or print color
+  it can't write back. Edits and deletions that PDFium's rewrite would re-space invisible text
+  with are refused.
 - TeX fonts are tested with a subset of CMR10 cut from the bundled copy at run time: spaces,
   drawing new letters with a copy of the font (the PDF's font untouched, the copy reused, the
   line kept together, widths for letters the PDF gives a width of 0, object numbers up to

@@ -75,6 +75,19 @@ public sealed class TextRunTests
     }
 
     [Fact]
+    public void ReplaceText_OnCharacterRun_WithNothing_DeletesTheWholeLine()
+    {
+        using var session = OpenInvoice();
+        var others = new[] { "Invoice 2024", "$1,250.00" }.Select(t => Find(session, t)).ToList();
+
+        var result = session.ReplaceText(0, Find(session, "Total due").ObjectIndex, string.Empty);
+
+        // All nine objects go, the space included; the other lines stay where they were.
+        Assert.Equal(EditStatus.Applied, result.Status);
+        Assert.Equal(others.Select(r => (r.Text, r.Bounds)), session.GetTextRuns(0).Select(r => (r.Text, r.Bounds)));
+    }
+
+    [Fact]
     public void ReplaceText_OnCharacterRun_RefusesToPushTheRestOfTheLineOffThePage()
     {
         using var session = DocumentSession.FromSnapshot(TestPdfs.CharacterByCharacter(("Total due", 540, 700)));

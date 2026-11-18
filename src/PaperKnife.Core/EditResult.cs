@@ -11,7 +11,6 @@ public enum EditRejection
 {
     None,
     InvalidTarget,
-    EmptyText,
     UnsupportedCharacters,
     EditingRestricted,
     PageNotEditable,
@@ -55,7 +54,7 @@ public sealed class EditResult
     /// <summary>For <see cref="EditRejection.UnsupportedCharacters"/>: the characters that can't be used.</summary>
     public IReadOnlyList<string> UnsupportedCharacters { get; }
 
-    /// <summary>For applied text edits: the edited run as it exists in the committed document.</summary>
+    /// <summary>For applied text edits: the edited run as it exists in the committed document; null when the text was deleted.</summary>
     public PdfTextRun? TextRun { get; }
 
     internal static EditResult Applied(string message, IReadOnlyList<string>? warnings = null, PdfTextRun? textRun = null, IReadOnlyList<string>? details = null) =>

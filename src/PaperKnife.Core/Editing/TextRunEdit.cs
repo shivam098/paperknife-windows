@@ -10,6 +10,12 @@ namespace PaperKnife.Core.Editing;
 /// </summary>
 internal readonly record struct TextRunEdit(int First, int Last, string NewText)
 {
+    /// <summary>Removes all <paramref name="count"/> objects of a run, spaces drawn at its end included.</summary>
+    public static TextRunEdit DeleteAll(int count) => new(0, count - 1, string.Empty);
+
+    /// <summary>Whether this edit removes every object of a run of <paramref name="count"/> objects.</summary>
+    public bool DeletesAll(int count) => First == 0 && Last == count - 1 && NewText.Length == 0;
+
     /// <param name="pieces">The text of each object in the run, in order.</param>
     /// <param name="separators">The text between consecutive objects: a space PDFium found in the gap, or nothing.</param>
     /// <param name="newText">The run's new text, without trailing whitespace.</param>

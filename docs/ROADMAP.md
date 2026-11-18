@@ -51,7 +51,7 @@ Milestones are ordered by value to users and by risk. Each milestone ends with a
   line moves to fit. Still to do: lines split across fonts (for example the "fi" ligature in PDFs
   saved from Chrome, which sits in a font of its own), paragraphs, and reflowing inside the
   original area.
-- Delete text, add text boxes, images and signature images.
+- ✅ Delete a whole line. Still to do: add text boxes, images and signature images.
 - Annotations: highlight, underline, notes, ink and shapes.
 
 ## M3 — Toolbox

@@ -40,13 +40,13 @@ Warnings are treated as errors.
 1. Set the new version in `Directory.Build.props` and write the release notes as
    `docs/releases/v<version>.md`.
 2. Once that is merged, tag the commit and push the tag, for example
-   `git tag v0.3.0` and `git push origin v0.3.0`.
+   `git tag v0.4.0` and `git push origin v0.4.0`.
 3. The [Release workflow](.github/workflows/release.yml) runs the tests, builds the installer,
    the portable ZIPs and `SHA256SUMS.txt`, and publishes them as a GitHub release. Tags with a
-   suffix, such as `v0.3.0-beta.1`, become pre-releases.
+   suffix, such as `v0.4.0-beta.1`, become pre-releases.
 
 To test packaging without releasing, run the Release workflow from the Actions tab, or build the
-same files locally with `pwsh build/package.ps1 -Version 0.3.0` (they're written to
+same files locally with `pwsh build/package.ps1 -Version 0.4.0` (they're written to
 `artifacts/release/`).
 
 Never change the installer's `AppId` in `installer/PaperKnife.iss`: Windows uses it to find the

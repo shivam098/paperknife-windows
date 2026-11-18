@@ -202,7 +202,8 @@ public sealed class DocumentSession : IDisposable
     /// Replaces the text of a run, keeping its font, size, position and color. Only the text
     /// objects whose characters change are rewritten; the rest of the run keeps its characters and
     /// moves along the baseline to make room. Trailing whitespace is dropped: it is invisible, and
-    /// a character the font can't draw there would be impossible to detect.
+    /// a character the font can't draw there would be impossible to detect. Empty text deletes the
+    /// whole run.
     /// </summary>
     /// <param name="objectIndex">Any page object of the run, normally <see cref="PdfTextRun.ObjectIndex"/>.</param>
     /// <remarks>
@@ -231,12 +232,8 @@ public sealed class DocumentSession : IDisposable
             }
 
             var original = layout.Run;
-            if (text.Length == 0)
-            {
-                return EditResult.Rejected(EditRejection.EmptyText, "Type at least one character. Deleting a whole line of text isn't supported yet.");
-            }
-
-            if (TextEquivalence.AreEquivalent(text, original.Text))
+            var deletes = text.Length == 0;
+            if (!deletes && TextEquivalence.AreEquivalent(text, original.Text))
             {
                 return EditResult.NoChange("The text is unchanged.");
             }
@@ -246,7 +243,9 @@ public sealed class DocumentSession : IDisposable
                 return EditResult.Rejected(EditRejection.EditingRestricted, "The author of this PDF restricted editing.");
             }
 
-            var edit = TextRunEdit.Plan([.. layout.Pieces.Select(p => p.Text)], layout.Separators, text);
+            var edit = deletes
+                ? TextRunEdit.DeleteAll(layout.Pieces.Count)
+                : TextRunEdit.Plan([.. layout.Pieces.Select(p => p.Text)], layout.Separators, text);
             var pageCount = _document.PageCount;
             var countsBefore = page.CountObjects();
             var (width, height) = EditVerifier.CheckSize(page.Width, page.Height);
@@ -285,7 +284,7 @@ public sealed class DocumentSession : IDisposable
 
             if (candidate is null)
             {
-                var failure = RewriteWithPdfium(pageIndex, page, layout, edit, width, height, out candidate, out change);
+                var failure = RewriteWithPdfium(pageIndex, page, pagePieces, layout, edit, width, height, out candidate, out change);
                 if (failure is not null)
                 {
                     return failure;
@@ -296,7 +295,7 @@ public sealed class DocumentSession : IDisposable
             PdfDocument? verified = PdfDocument.Load(candidate!, _password);
             try
             {
-                var problem = VerifyTextEdit(verified, candidate!, pageCount, change, countsBefore, before, glyphsToCheck, copyFont, out var edited, out var warnings);
+                var problem = VerifyTextEdit(verified, candidate!, pageCount, change, countsBefore, before, pagePieces, glyphsToCheck, copyFont, out var edited, out var warnings);
                 if (problem is not null)
                 {
                     return EditResult.Rejected(EditRejection.CollateralChange, problem);
@@ -304,7 +303,9 @@ public sealed class DocumentSession : IDisposable
 
                 Commit(candidate!, verified);
                 verified = null;
-                var message = change.MovedRest
+                var message = deletes
+                    ? "Text deleted. Verified: nothing else on this page changed."
+                    : change.MovedRest
                     ? "Text updated, and the rest of the line moved to fit. Verified: nothing else on this page changed."
                     : "Text updated. Verified: nothing else on this page changed.";
                 List<string> details = addedFont is null
@@ -323,7 +324,9 @@ public sealed class DocumentSession : IDisposable
     /// Makes an edit by having PDFium regenerate the page's content, for pages PaperKnife can't
     /// edit in the content stream. Refuses pages whose content PDFium can't write back unchanged.
     /// </summary>
-    private EditResult? RewriteWithPdfium(int pageIndex, PdfPage page, TextRunLayout layout, TextRunEdit edit, int width, int height, out PdfSnapshot? candidate, out RunChange? change)
+    /// <param name="pagePieces">The page's text objects.</param>
+    private EditResult? RewriteWithPdfium(
+        int pageIndex, PdfPage page, IReadOnlyList<TextPiece> pagePieces, TextRunLayout layout, TextRunEdit edit, int width, int height, out PdfSnapshot? candidate, out RunChange? change)
     {
         candidate = null;
         change = null;
@@ -347,11 +350,16 @@ public sealed class DocumentSession : IDisposable
             }
         }
 
-        var runObjects = layout.Pieces.Select(p => p.ObjectIndex).ToList();
-        var rewriteProblem = CheckRewriteKeepsAppearance(pageIndex, runObjects, page.Render(width, height));
-        if (rewriteProblem is not null)
+        // Deleting needs no rewrite check: nothing of the deleted text remains, and the checks after
+        // the change cover everything else on the page, invisible text included.
+        if (!edit.DeletesAll(layout.Pieces.Count))
         {
-            return EditResult.Rejected(EditRejection.PageNotEditable, rewriteProblem);
+            var runObjects = layout.Pieces.Select(p => p.ObjectIndex).ToList();
+            var rewriteProblem = CheckRewriteKeepsAppearance(pageIndex, runObjects, page.Render(width, height), pagePieces);
+            if (rewriteProblem is not null)
+            {
+                return EditResult.Rejected(EditRejection.PageNotEditable, rewriteProblem);
+            }
         }
 
         using var scratch = PdfDocument.Load(_current, _password);
@@ -630,6 +638,7 @@ public sealed class DocumentSession : IDisposable
         return null;
     }
 
+    /// <param name="piecesBefore">The page's text objects before the edit.</param>
     /// <param name="glyphsToCheck">New characters that must have a glyph in the edited text's font in the candidate (the font changed with the edit).</param>
     /// <param name="copyFont">The name of the complete copy of a font the edited text is drawn with, if any (see <see cref="Fonts.FontCompletion"/>).</param>
     private string? VerifyTextEdit(
@@ -639,6 +648,7 @@ public sealed class DocumentSession : IDisposable
         RunChange change,
         PageObjectCounts countsBefore,
         RenderedBitmap before,
+        IReadOnlyList<TextPiece> piecesBefore,
         string? glyphsToCheck,
         string? copyFont,
         out PdfTextRun? edited,
@@ -664,6 +674,12 @@ public sealed class DocumentSession : IDisposable
         var byIndex = pieces.ToDictionary(p => p.ObjectIndex);
         var edit = change.Edit;
         var originalPieces = change.Layout.Pieces;
+        var deletes = edit.DeletesAll(originalPieces.Count);
+        if (deletes && !KeepsOtherText(piecesBefore, change.HiddenBefore, byIndex))
+        {
+            return "Deleting this text would also change other text on the page, so it was cancelled.";
+        }
+
         var rest = originalPieces.Skip(edit.Last + 1).ToList();
         if (edit.NewText.Trim().Length > 0)
         {
@@ -729,19 +745,22 @@ public sealed class DocumentSession : IDisposable
             return $"This edit would also change {changed:N0} pixels elsewhere on the page (PDFium can't rewrite some spacing, shading or images exactly), so it was cancelled.";
         }
 
-        edited = runs.FirstOrDefault(r => r.Contains(original.ObjectIndex))?.Run;
-        if (edited is null)
+        if (!deletes)
         {
-            return "The new text didn't survive saving, so the edit was cancelled.";
-        }
-
-        foreach (var other in runs.Select(r => r.Run))
-        {
-            if (other.ObjectIndex != edited.ObjectIndex && !other.IsInvisible
-                && other.Bounds.Intersects(edited.Bounds) && !other.Bounds.Intersects(original.Bounds))
+            edited = runs.FirstOrDefault(r => r.Contains(original.ObjectIndex))?.Run;
+            if (edited is null)
             {
-                warnings.Add("The new text now overlaps nearby text. Undo if that isn't what you want.");
-                break;
+                return "The new text didn't survive saving, so the edit was cancelled.";
+            }
+
+            foreach (var other in runs.Select(r => r.Run))
+            {
+                if (other.ObjectIndex != edited.ObjectIndex && !other.IsInvisible
+                    && other.Bounds.Intersects(edited.Bounds) && !other.Bounds.Intersects(original.Bounds))
+                {
+                    warnings.Add("The new text now overlaps nearby text. Undo if that isn't what you want.");
+                    break;
+                }
             }
         }
 
@@ -751,6 +770,66 @@ public sealed class DocumentSession : IDisposable
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Whether every text object but the deleted ones is still there, in the same order, with the
+    /// same text, geometry and rendering mode. Invisible text, which the page comparison can't
+    /// see, is checked this way too.
+    /// </summary>
+    /// <param name="deleted">The page's indexes of the deleted objects before the edit.</param>
+    /// <param name="after">The page's text objects after the edit, by index.</param>
+    /// <remarks>
+    /// PDFium reads an object's text in the context of its neighbours: a hyphen or soft hyphen that
+    /// ends a line reads as U+0002 only when more text follows on the next line, the spaces after
+    /// it may be left out, and a copy drawn over other text (as for fake bold) reads as nothing. So
+    /// text is compared as a reader sees it, and an object that read as nothing may now read as text.
+    /// </remarks>
+    private static bool KeepsOtherText(IReadOnlyList<TextPiece> before, IReadOnlyList<int> deleted, Dictionary<int, TextPiece> after)
+    {
+        var removed = deleted.Order().ToList();
+        foreach (var piece in before)
+        {
+            var position = removed.BinarySearch(piece.ObjectIndex);
+            if (position >= 0)
+            {
+                continue;
+            }
+
+            // The objects after a deleted one move up by one index each.
+            if (!after.TryGetValue(piece.ObjectIndex - ~position, out var kept)
+                || kept.RenderMode != piece.RenderMode || !SameGeometry(kept, piece)
+                || (piece.HasCharacters && (!kept.HasCharacters || !TextEquivalence.AreEquivalentIgnoringSpacing(AsWritten(kept.Text), AsWritten(piece.Text)))))
+            {
+                return false;
+            }
+        }
+
+        return true;
+
+        // A hyphen or soft hyphen that ends a line reads as U+0002 while the next line follows it.
+        static string AsWritten(string text) => text.Replace('\u0002', '-').Replace('\u00AD', '-');
+    }
+
+    /// <summary>
+    /// Whether a text object is placed and spaced as it was: the same matrix, and the same bounds,
+    /// which also change with letter and word spacing, as PDFium's page rewrite may drop them.
+    /// </summary>
+    private static bool SameGeometry(TextPiece kept, TextPiece piece)
+    {
+        var m = piece.Matrix;
+        var tolerance = (Math.Max(Math.Max(Math.Abs(m.A), Math.Abs(m.B)), Math.Max(Math.Abs(m.C), Math.Abs(m.D))) * 1e-4) + 1e-6;
+        return kept.HasMatrix == piece.HasMatrix
+            && Math.Abs(kept.Matrix.E - m.E) <= 0.01 && Math.Abs(kept.Matrix.F - m.F) <= 0.01
+            && Math.Abs(kept.Matrix.A - m.A) <= tolerance && Math.Abs(kept.Matrix.B - m.B) <= tolerance
+            && Math.Abs(kept.Matrix.C - m.C) <= tolerance && Math.Abs(kept.Matrix.D - m.D) <= tolerance
+            && (kept.Bounds, piece.Bounds) switch
+            {
+                (null, null) => true,
+                ({ } a, { } b) => Math.Abs(a.Left - b.Left) <= 0.01 && Math.Abs(a.Bottom - b.Bottom) <= 0.01
+                    && Math.Abs(a.Right - b.Right) <= 0.01 && Math.Abs(a.Top - b.Top) <= 0.01,
+                _ => false,
+            };
     }
 
     /// <summary>
@@ -869,9 +948,11 @@ public sealed class DocumentSession : IDisposable
     /// <summary>
     /// Has PDFium rewrite the page with nothing changed and checks it still looks the same. This
     /// covers the edited text's own styling (letter and word spacing, print colors), which the
-    /// after-edit comparison can't see because it hides that text.
+    /// after-edit comparison can't see because it hides that text. Every text object must also keep
+    /// its geometry, which covers text the rendering can't show, such as the invisible text of a
+    /// scanned page: PDFium's rewrite drops letter and word spacing from all the text it rewrites.
     /// </summary>
-    private string? CheckRewriteKeepsAppearance(int pageIndex, IReadOnlyList<int> objectIndexes, RenderedBitmap original)
+    private string? CheckRewriteKeepsAppearance(int pageIndex, IReadOnlyList<int> objectIndexes, RenderedBitmap original, IReadOnlyList<TextPiece> pagePieces)
     {
         PdfSnapshot rewritten;
         using (var probe = PdfDocument.Load(_current, _password))
@@ -886,10 +967,17 @@ public sealed class DocumentSession : IDisposable
         }
 
         using var reloaded = PdfDocument.Load(rewritten, _password);
-        var after = reloaded.GetPage(pageIndex).Render(original.Width, original.Height);
-        return EditVerifier.CountChangedPixels(original, after) == 0
+        var rewrittenPage = reloaded.GetPage(pageIndex);
+        var after = rewrittenPage.Render(original.Width, original.Height);
+        if (EditVerifier.CountChangedPixels(original, after) != 0)
+        {
+            return "PaperKnife can't rewrite this page without changing how it looks (for example letter spacing, print colors or small embedded images), so its text can't be edited yet.";
+        }
+
+        var rewrittenPieces = rewrittenPage.GetTextLayout().Pieces.ToDictionary(p => p.ObjectIndex);
+        return pagePieces.All(p => rewrittenPieces.TryGetValue(p.ObjectIndex, out var kept) && SameGeometry(kept, p))
             ? null
-            : "PaperKnife can't rewrite this page without changing how it looks (for example letter spacing, print colors or small embedded images), so its text can't be edited yet.";
+            : "PaperKnife can't rewrite this page without changing the spacing of some of its text (for example the invisible text of a scanned page), so its text can't be edited yet.";
     }
 
     /// <summary>

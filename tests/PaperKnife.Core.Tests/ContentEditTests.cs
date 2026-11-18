@@ -178,8 +178,10 @@ public sealed class ContentEditTests
         Assert.Contains(session.GetTextRuns(1), r => r.Text == "Hello World");
     }
 
-    [Fact]
-    public void ReplaceText_InBlockWithLineOperators_KeepsTheOtherLines()
+    [Theory]
+    [InlineData("2nd line")]
+    [InlineData("")] // deleted
+    public void ReplaceText_InBlockWithLineOperators_KeepsTheOtherLines(string newText)
     {
         // ' and " move to the next line by the leading; TD also sets the leading, which the later
         // block's T* uses.
@@ -190,7 +192,7 @@ public sealed class ContentEditTests
         var original = session.CurrentSnapshot;
         var others = new[] { "First line", "Third line", "Fourth", "After", "Next" }.Select(t => Find(session, t)).ToList();
 
-        var result = session.ReplaceText(0, Find(session, "Second line").ObjectIndex, "2nd line");
+        var result = session.ReplaceText(0, Find(session, "Second line").ObjectIndex, newText);
 
         Assert.Equal(EditStatus.Applied, result.Status);
         AssertAppended(original, session.CurrentSnapshot);
@@ -200,6 +202,150 @@ public sealed class ContentEditTests
             Assert.Equal(other.Bounds.Left, after.Left, 0.01f);
             Assert.Equal(other.Bounds.Bottom, after.Bottom, 0.01f);
         }
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)] // PDFium rewrites the page
+    public void ReplaceText_WithNothing_DeletesTheLine(bool contentEditing)
+    {
+        using var session = Open(RawPdf.SinglePage(RawPdf.BaseContent), contentEditing);
+        var original = session.CurrentSnapshot;
+        var other = Find(session, "This line must not move");
+
+        var result = session.ReplaceText(0, Find(session, "Hello World").ObjectIndex, string.Empty);
+
+        Assert.Equal(EditStatus.Applied, result.Status);
+        Assert.StartsWith("Text deleted.", result.Message, StringComparison.Ordinal);
+        Assert.Null(result.TextRun);
+        Assert.Equal(["This line must not move"], session.GetTextRuns(0).Select(r => r.Text));
+        Assert.Equal(other.Bounds, Find(session, "This line must not move").Bounds);
+        Assert.Equal(contentEditing, session.CurrentSnapshot.Span.StartsWith(original.Span));
+
+        Assert.True(session.Undo());
+        Assert.Contains(session.GetTextRuns(0), r => r.Text == "Hello World");
+    }
+
+    [Fact]
+    public void ReplaceText_WithNothing_KeepsInvisibleTextAfterIt()
+    {
+        // The invisible text was placed right after the deleted text; the page looks the same
+        // wherever it ends up, so its position is checked on its own.
+        using var session = Open(RawPdf.SinglePage("BT /F1 12 Tf 72 600 Td (Visible) Tj 3 Tr (hidden words) Tj ET\n"));
+        var hidden = Find(session, "hidden words");
+        Assert.True(hidden.IsInvisible);
+
+        var result = session.ReplaceText(0, Find(session, "Visible").ObjectIndex, string.Empty);
+
+        Assert.Equal(EditStatus.Applied, result.Status);
+        Assert.Equal(hidden.Bounds, Find(session, "hidden words").Bounds);
+    }
+
+    [Theory]
+    [InlineData("")] // deleted
+    [InlineData("Hello There")]
+    public void PdfiumRewrite_WhenItWouldRespaceInvisibleText_IsRejected(string newText)
+    {
+        // PDFium's page rewrite drops letter spacing, which the page comparison can't see in invisible text.
+        using var session = Open(RawPdf.SinglePage(RawPdf.BaseContent + "BT /F1 12 Tf 3 Tr 5 Tc 72 300 Td (hidden OCR words) Tj ET\n"), contentEditing: false);
+
+        var result = session.ReplaceText(0, Find(session, "Hello World").ObjectIndex, newText);
+
+        Assert.Equal(EditStatus.Rejected, result.Status);
+        Assert.False(session.IsModified);
+    }
+
+    [Theory]
+    [InlineData("BT /F1 18 Tf 4 Tc 72 400 Td (DRAFT) Tj ET\n")] // letter spacing
+    [InlineData("BT /F1 18 Tf 0 1 1 0 k 72 400 Td (DRAFT) Tj ET\n")] // a print (CMYK) color
+    [InlineData("BT /F1 12 Tf 3 Tr 5 Tc 72 300 Td (hidden OCR words) Tj ET\n")] // invisible and letter-spaced
+    public void PdfiumRewrite_DeletesTextWhoseOwnStyleItCannotWriteBack(string content)
+    {
+        // Nothing of the deleted text remains, so only the rest of the page has to survive the rewrite.
+        using var session = Open(RawPdf.SinglePage(RawPdf.BaseContent + content), contentEditing: false);
+        var run = session.GetTextRuns(0).Single(r => r.Text is not ("Hello World" or "This line must not move"));
+
+        var result = session.ReplaceText(0, run.ObjectIndex, string.Empty);
+
+        Assert.Equal(EditStatus.Applied, result.Status);
+        Assert.Equal(["Hello World", "This line must not move"], session.GetTextRuns(0).Select(r => r.Text));
+    }
+
+    [Fact]
+    public void ReplaceText_WithNothing_AfterAHyphenatedLine_Applies()
+    {
+        // PDFium reads the hyphen that ends the first line as U+0002 only while the next line follows it.
+        using var session = Open(RawPdf.SinglePage("BT /F1 12 Tf 72 600 Td (A long hyphen-) Tj 0 -14 Td (ated word.) Tj ET\n"));
+
+        var result = session.ReplaceText(0, Find(session, "ated word.").ObjectIndex, string.Empty);
+
+        Assert.Equal(EditStatus.Applied, result.Status);
+        Assert.Equal(["A long hyphen-"], session.GetTextRuns(0).Select(r => r.Text));
+    }
+
+    [Fact]
+    public void ReplaceText_WithNothing_AfterALineEndingInASoftHyphen_Applies()
+    {
+        // Some word processors map their hyphen to U+00AD SOFT HYPHEN, which PDFium also reads as U+0002 there.
+        using var session = Open(RawPdf.WriteWithTable(
+        [
+            "<< /Type /Catalog /Pages 2 0 R >>",
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+            RawPdf.Stream("BT /F1 12 Tf 72 600 Td (A long hyphen-) Tj 0 -14 Td (ated word.) Tj ET\n"),
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding /ToUnicode 6 0 R >>",
+            RawPdf.Stream("/CIDInit /ProcSet findresource begin 12 dict begin begincmap /CMapName /Soft def /CMapType 2 def\n" +
+                "1 begincodespacerange <00> <FF> endcodespacerange\n1 beginbfchar <2D> <00AD> endbfchar\n" +
+                "endcmap CMapName currentdict /CMap defineresource pop end end"),
+        ]));
+
+        var result = session.ReplaceText(0, Find(session, "ated word.").ObjectIndex, string.Empty);
+
+        Assert.Equal(EditStatus.Applied, result.Status);
+    }
+
+    [Fact]
+    public void ReplaceText_WithNothing_OnFakeBoldText_DeletesOneCopyAtATime()
+    {
+        // Text drawn twice, slightly apart, looks bold. PDFium reads only the first copy; once it is
+        // deleted, the second one reads as text and can be deleted too.
+        using var session = Open(RawPdf.SinglePage(
+            "BT /F1 18 Tf 72 600 Td (Bold Heading) Tj ET\nBT /F1 18 Tf 72.4 600 Td (Bold Heading) Tj ET\nBT /F1 12 Tf 72 500 Td (Body) Tj ET\n"));
+
+        var first = session.ReplaceText(0, Find(session, "Bold Heading").ObjectIndex, string.Empty);
+        var second = session.ReplaceText(0, Find(session, "Bold Heading").ObjectIndex, string.Empty);
+
+        Assert.Equal(EditStatus.Applied, first.Status);
+        Assert.Equal(EditStatus.Applied, second.Status);
+        Assert.Equal(["Body"], session.GetTextRuns(0).Select(r => r.Text));
+    }
+
+    [Fact]
+    public void ReplaceText_WithNothing_InAFontPaperKnifeCannotEncode_KeepsEveryOtherByte()
+    {
+        // Chinese text in a font with one of the CMaps PDFium has built in; deleting it needs no encoding.
+        var pdf = RawPdf.WriteWithTable(
+        [
+            "<< /Type /Catalog /Pages 2 0 R >>",
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F4 6 0 R >> >> >>",
+            RawPdf.Stream(RawPdf.BaseContent + "BT /F4 24 Tf 72 500 Td <4E2D6587> Tj ET\n"),
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+            "<< /Type /Font /Subtype /Type0 /BaseFont /STSong-Light /Encoding /UniGB-UCS2-H /DescendantFonts [7 0 R] >>",
+            "<< /Type /Font /Subtype /CIDFontType0 /BaseFont /STSong-Light /CIDSystemInfo << /Registry (Adobe) /Ordering (GB1) /Supplement 2 >> " +
+                "/FontDescriptor 8 0 R /DW 1000 >>",
+            "<< /Type /FontDescriptor /FontName /STSong-Light /Flags 6 /FontBBox [0 -200 1000 900] /ItalicAngle 0 /Ascent 880 /Descent -120 " +
+                "/CapHeight 880 /StemV 93 >>",
+        ]);
+        using var session = Open(pdf);
+        var original = session.CurrentSnapshot;
+        var others = session.GetTextRuns(0).Where(r => r.Text != "中文").ToList();
+
+        var result = session.ReplaceText(0, Find(session, "中文").ObjectIndex, string.Empty);
+
+        Assert.Equal(EditStatus.Applied, result.Status);
+        AssertAppended(original, session.CurrentSnapshot);
+        Assert.Equal(others.Select(r => (r.Text, r.Bounds)), session.GetTextRuns(0).Select(r => (r.Text, r.Bounds)));
     }
 
     [Fact]

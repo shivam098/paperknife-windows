@@ -38,6 +38,8 @@ Nothing else needs to be installed.
 - Open PDFs (including password-protected ones), browse pages and zoom.
 - **Edit existing text in place.** Click a line of text, or pick it from *Text on this page*,
   change it and press Enter. The original font, size, position and color are kept.
+- **Delete text.** Select a line and choose **Delete text** (or clear it and press Enter). The
+  rest of the page stays exactly where it was.
 - **Whole lines, even in PDFs that draw text letter by letter.** Some PDFs, for example those
   made from web pages, draw every character or word separately. PaperKnife still selects the
   whole line or table cell, rewrites only the characters you changed, and moves the rest of the
@@ -99,7 +101,7 @@ dotnet run --project src/PaperKnife.App -- C:\path\to\file.pdf                  
 
 The app builds for your PC's architecture by default; pass `-r win-x64` or `-r win-arm64` to
 choose. The first build downloads the Windows App SDK (several hundred megabytes). To build the
-installer and portable ZIPs yourself, run `pwsh build/package.ps1 -Version 0.3.0`; see
+installer and portable ZIPs yourself, run `pwsh build/package.ps1 -Version 0.4.0`; see
 [CONTRIBUTING.md](CONTRIBUTING.md#releasing).
 
 ## Repository layout

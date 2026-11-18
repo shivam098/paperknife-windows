@@ -56,6 +56,11 @@ internal static unsafe class ContentTextEdit
         }
 
         var runShows = layout.Pieces.Select(p => text.ObjectShows[ordinals[p.ObjectIndex]]).ToList();
+        if (edit.DeletesAll(layout.Pieces.Count))
+        {
+            return Delete(page, text, runShows, layout, edit, pagePieces);
+        }
+
         var first = runShows[edit.First];
         var firstPiece = layout.Pieces[edit.First];
         if (first.Font is not { CodeLength: 1 or 2 } font || first.InReplacedText)
@@ -233,6 +238,42 @@ internal static unsafe class ContentTextEdit
             AddedFont: completion is { Reused: false } ? completion.FontName : null,
             GlyphsToCheck: completion is null ? null : plan.NewCharacters,
             CopyFont: completion?.FontName);
+    }
+
+    /// <summary>
+    /// Deletes a whole run: its text-showing operations are left out of their blocks, which are
+    /// rewritten as for an edit, so the rest of each block keeps its place. Nothing is encoded, so
+    /// any font will do.
+    /// </summary>
+    private static ContentEditResult Delete(
+        ContentPage page, ContentTextLayout text, List<ShowOp> runShows, TextRunLayout layout, TextRunEdit edit, IReadOnlyList<TextPiece> pagePieces)
+    {
+        if (runShows.Any(s => s.InReplacedText))
+        {
+            return NotApplicable("The text has replacement text (/ActualText).");
+        }
+
+        var roles = new Dictionary<int, Role>();
+        foreach (var show in runShows)
+        {
+            roles[show.OpIndex] = Role.Removed;
+        }
+
+        var blocks = runShows.Select(s => s.Block).Distinct().Order().ToList();
+        if (CheckBlocks(text, blocks, pagePieces) is { } problem)
+        {
+            return NotApplicable(problem);
+        }
+
+        if (Rewrite(page, text, blocks, roles, runShows[0], string.Empty, (0, 0), switchFont: null) is not { } content)
+        {
+            return NotApplicable("The text blocks can't be rewritten.");
+        }
+
+        var updates = page.Streams.Select((s, i) => (ObjectUpdate)new StreamUpdate(s.Number, s.Generation, i == 0 ? content : [])).ToList();
+        var deleted = layout.Pieces.Select(p => p.ObjectIndex).ToList();
+        var change = new RunChange(layout, edit, deleted.Count, 0, 0, 0, 0, deleted, []);
+        return new ContentEditResult(ContentEditOutcome.Ready, Candidate: IncrementalUpdate.Append(page.File, updates), Change: change);
     }
 
     /// <summary>
