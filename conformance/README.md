@@ -104,6 +104,15 @@ a name, and otherwise `{"base": <BaseEncoding or null>, "differences": {"<code>"
 - Objects have the same keys, and arrays the same items in the same order.
 - Numbers may differ by up to 0.011: sizes, bounds and page sizes are rounded to 0.01 and widths
   to 0.0001, half away from zero, and different processors may round the last digit differently.
+- The `bounds` of a run whose font isn't embedded follow the shapes of the font that PDFium finds
+  on the computer to draw it with, and the cases were recorded on Windows. On other systems:
+  - for a run in one of the standard 14 fonts (`Courier`, `Courier-Bold`, `Courier-Oblique`,
+    `Courier-BoldOblique`, `Helvetica`, `Helvetica-Bold`, `Helvetica-Oblique`,
+    `Helvetica-BoldOblique`, `Times-Roman`, `Times-Bold`, `Times-Italic`, `Times-BoldItalic`,
+    `Symbol` or `ZapfDingbats`), each edge may differ by up to a tenth of the run's `size`. On
+    Ubuntu 24.04, the 12-point Helvetica runs differ by up to 0.36;
+  - for a run in any other font that isn't embedded, don't compare `bounds`. On Ubuntu 24.04, the
+    12-point STSong-Light run differs by up to 22.68.
 - Everything else, messages included, must be exactly the same.
 
 ## Updating the corpus
