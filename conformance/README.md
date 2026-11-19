@@ -21,7 +21,7 @@ so.
 |---|---|
 | `cases/<id>.json` | A case: its documents, steps and the expected observations. |
 | `documents/<hash>.pdf` | The documents cases open or append, named by the first 12 hex digits of their SHA-256, so cases share them. |
-| `contents/<hash>.content` | The decoded content of pages, named the same way, for comparing by eye when an app writes different content. Apps don't need them to run the cases. |
+| `contents/<hash>.content` | The decoded content of pages, named the same way, for comparing by eye when an app writes different content, and for comparing content that may differ on other systems (see Comparing). |
 | `INDEX.md` | Every case, what it checks and what it guards against. |
 | `licenses/` | The license of DejaVu Sans, which some documents embed (see below). |
 
@@ -113,6 +113,11 @@ a name, and otherwise `{"base": <BaseEncoding or null>, "differences": {"<code>"
     Ubuntu 24.04, the 12-point Helvetica runs differ by up to 0.36;
   - for a run in any other font that isn't embedded, don't compare `bounds`. On Ubuntu 24.04, the
     12-point STSong-Light run differs by up to 22.68.
+- Where PaperKnife measures such a run to move text after it, the text can land slightly
+  elsewhere, so on other systems a page's `content` can differ too. When it does and the page has
+  a run whose font isn't embedded, the page's decoded content must have the same tokens as
+  `contents/<the first 12 digits of the hash>.content`, except that numbers may differ by up to
+  0.0001. On Ubuntu 24.04, `runs-layout-as-saved-pdfium-rewrite` writes 96.01201 for 96.012.
 - Everything else, messages included, must be exactly the same.
 
 ## Updating the corpus
