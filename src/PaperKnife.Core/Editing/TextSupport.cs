@@ -32,6 +32,12 @@ internal static unsafe class TextSupport
             return new("This text has no usable font, so it can't be edited.", []);
         }
 
+        var invalid = NotValidUnicode(text);
+        if (invalid.Count > 0)
+        {
+            return new($"This text has characters that aren't valid Unicode: {string.Join(", ", invalid)}", invalid);
+        }
+
         var layout = Distinct(text, IsLayoutCharacter);
         if (layout.Count > 0)
         {
@@ -66,6 +72,32 @@ internal static unsafe class TextSupport
     private static bool IsLayoutCharacter(char c) =>
         char.IsControl(c)
         || CharUnicodeInfo.GetUnicodeCategory(c) is UnicodeCategory.LineSeparator or UnicodeCategory.ParagraphSeparator;
+
+    /// <summary>
+    /// U+FFFE and unpaired surrogates, named like "U+FFFE": pasted text can hold them, but no font
+    /// draws them and .NET can't normalize them.
+    /// </summary>
+    private static List<string> NotValidUnicode(string text)
+    {
+        var found = new List<string>();
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (char.IsSurrogatePair(text, i))
+            {
+                i++;
+            }
+            else if (text[i] == '\uFFFE' || char.IsSurrogate(text[i]))
+            {
+                var name = string.Create(CultureInfo.InvariantCulture, $"U+{(int)text[i]:X4}");
+                if (!found.Contains(name))
+                {
+                    found.Add(name);
+                }
+            }
+        }
+
+        return found;
+    }
 
     private static bool NeedsShaping(char c)
     {

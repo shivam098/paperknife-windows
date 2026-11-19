@@ -1,3 +1,4 @@
+using System.Globalization;
 using PaperKnife.Core.Editing;
 
 namespace PaperKnife.Core.Tests;
@@ -51,6 +52,27 @@ public sealed class TextEditTests
         var result = session.ReplaceText(0, Find(session, "Hello World").ObjectIndex, text);
 
         Assert.Equal(EditRejection.UnsupportedCharacters, result.Rejection);
+        Assert.False(session.IsModified);
+    }
+
+    [Theory]
+    [InlineData(0xFFFE, true)]
+    [InlineData(0xFFFE, false)]
+    [InlineData(0xD800, true)]
+    [InlineData(0xD800, false)]
+    [InlineData(0xDC00, true)]
+    public void ReplaceText_WithTextThatIsNotValidUnicode_IsRejected(int codeUnit, bool contentEditing)
+    {
+        // .NET can't normalize U+FFFE or an unpaired surrogate: comparing such text threw, which
+        // would have ended the app.
+        using var session = OpenRaw(RawPdf.BaseContent, contentEditing);
+        var character = string.Create(CultureInfo.InvariantCulture, $"U+{codeUnit:X4}");
+
+        var result = session.ReplaceText(0, Find(session, "Hello World").ObjectIndex, $"Hello {(char)codeUnit} again");
+
+        Assert.Equal(EditRejection.UnsupportedCharacters, result.Rejection);
+        Assert.Equal($"This text has characters that aren't valid Unicode: {character}", result.Message);
+        Assert.Equal([character], result.UnsupportedCharacters);
         Assert.False(session.IsModified);
     }
 

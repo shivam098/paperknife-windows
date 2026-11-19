@@ -27,7 +27,7 @@ internal static class TextEquivalence
 
     public static string Normalize(string text)
     {
-        var normalized = text.Normalize(NormalizationForm.FormC);
+        var normalized = TryNormalize(text) ?? text;
         return string.Create(normalized.Length, normalized, static (span, source) =>
         {
             for (var i = 0; i < source.Length; i++)
@@ -35,6 +35,22 @@ internal static class TextEquivalence
                 span[i] = CharUnicodeInfo.GetUnicodeCategory(source[i]) == UnicodeCategory.SpaceSeparator ? ' ' : source[i];
             }
         });
+    }
+
+    /// <summary>
+    /// The text in NFC, or null when .NET can't normalize it because it has U+FFFE or an unpaired
+    /// surrogate, as pasted text or a PDF's character map can. Such text compares as it is.
+    /// </summary>
+    private static string? TryNormalize(string text)
+    {
+        try
+        {
+            return text.Normalize(NormalizationForm.FormC);
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
     }
 
     /// <summary>Characters of <paramref name="expected"/> that are missing from <paramref name="actual"/>.</summary>

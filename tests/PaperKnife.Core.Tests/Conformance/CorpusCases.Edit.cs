@@ -45,6 +45,13 @@ internal static partial class CorpusCases
             [Replace("Hello World", "नमस्ते")]),
 
         new(
+            "edit-text-that-is-not-valid-unicode",
+            "Typing text with U+FFFE, which pasted text can hold but isn't valid Unicode, is refused with a message naming it.",
+            "Comparing such text with the old text threw instead of refusing it, which would have closed PaperKnife for Windows and lost unsaved changes (found while porting PaperKnife to the Mac, fixed after v0.5.0).",
+            () => RawPdf.SinglePage(RawPdf.BaseContent),
+            [Replace("Hello World", "Hello \uFFFE again")]),
+
+        new(
             "edit-unsupported-layout-line-feed",
             "Typing a line break (U+000A) into a line is refused.",
             "A run is a single line: a line break would be drawn as a missing glyph rather than start a new line, so it must be refused (v0.1.0).",
