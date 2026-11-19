@@ -271,7 +271,11 @@ page's content stream itself whenever it can read the file with certainty. The c
    new codes, removed ones are left out, and the rest of the run is shifted along the baseline.
    Everything else in the block, such as fonts, colors, spacing and marked content, is copied byte
    for byte; `TD` keeps its effect on the leading through an explicit `TL`, and `"` keeps its word
-   and character spacing. Bytes outside these blocks don't change.
+   and character spacing. Bytes outside these blocks don't change. Each `Tm` must reproduce
+   PDFium's position to the bit: a glyph a fraction of a pixel off can round to another pixel,
+   and the page comparison then refuses the edit. PDFium adds up `Td`, `TD` and `T*` moves in
+   single precision, so `TextShowSimulator` does too. pdfTeX often draws a whole page in one
+   block, so this matters there.
 6. **Append an update.** The new content becomes a new version of the page's content stream,
    appended to the file with a cross-reference section of the same kind as the file's last one
    (ISO 32000-1, 7.5.6). Every byte of the original file stays where it was.
@@ -306,8 +310,10 @@ papers). `Editing/GlyphPlanner.cs` and `Fonts/` handle what that takes.
   when the font is nonsymbolic, and from the encoding built into the embedded program when it
   is symbolic, as TeX's fonts are (`cpdf_simplefont.cpp`, `cpdf_type1font.cpp`); it ignores an
   `/Encoding` of `/StandardEncoding`. PaperKnife does the same, reading the built-in encoding
-  from the program's cleartext part, so in PDFs without a ToUnicode map TeX's ligatures, dashes
-  and quotes are read correctly.
+  from the program's cleartext part (all of StandardEncoding when the program says it uses it),
+  so in PDFs without a ToUnicode map TeX's ligatures, dashes and quotes are read correctly.
+  Glyph names stand for the characters the Adobe Glyph List gives them (`third_party/agl`), as
+  FreeType reads them for PDFium.
 - **Spaces become gaps when the font has no space.** TeX fonts have no space glyph: TeX leaves a
   gap between words, which PDFium reads as a space. When the font can't draw a space (PDFium
   finds no space glyph, or a Type 3 font has no glyph procedure for it), a new space becomes a
@@ -317,19 +323,42 @@ papers). `Editing/GlyphPlanner.cs` and `Fonts/` handle what that takes.
   Only U+0020 and U+00A0 become gaps; other spaces need a glyph.
 - **New letters come from a complete copy of the font.** pdfTeX embeds only the glyphs a
   document uses, so an edit often needs a letter the PDF lacks. PaperKnife ships the Type 1
-  Computer Modern fonts of the AMS (`third_party/amsfonts`, SIL Open Font License), the versions
-  TeX distributions embed. When a subset of one of them lacks a letter, `FontCompletion` adds a
-  font of its own to the edited page: the whole, unmodified program, with the PDF font's
-  encoding, character map and widths (and the glyphs' own widths for codes that had none, or a
-  width of 0 for a glyph the subset leaves out, as some tools write). Only
-  the edited text operation selects it (`/PK… size Tf`, then the PDF's font again), so the PDF's
-  own font and everything drawn with it, on every page, stay exactly as they were. The page
-  gets a new version of its dictionary with resources of its own, so pages that share or
-  inherit resources don't change. A later edit reuses a copy on the page only if it is the
-  same in every respect: program, encoding, character map, flags and widths. Line grouping
-  treats two embedded fonts with the same name as one typeface, so the edited text stays in its
-  line. The copy takes the next three object numbers; a file whose numbers already reach
-  PDFium's limit (about 25 million, `kMaxObjectNumber` in `cpdf_parser.h`) is refused.
+  fonts TeX distributions embed: the Computer Modern fonts of the AMS (`third_party/amsfonts`,
+  SIL Open Font License, compiled in), Latin Modern (`third_party/lm`, GUST Font License) and
+  CM-Super, the T1-encoded Computer Modern (`third_party/cm-super`, GPL with a font exception).
+  The last two ship as separate files in `Fonts\` next to the app, the same for every kind of PC,
+  and `BundledFonts` finds a font by the name its own cleartext gives it, never by a path a PDF
+  names. When a subset of one of these fonts lacks a letter, `FontCompletion` adds a font of its
+  own to the edited page: the whole, unmodified program, with the PDF font's character map and,
+  for every code its `/Differences` name, the same glyph and width. Only the edited text
+  operation selects it (`/PK… size Tf`, then the PDF's font again), so the PDF's own font and
+  everything drawn with it, on every page, stay exactly as they were. The page gets a new
+  version of its dictionary with resources of its own, so pages that share or inherit resources
+  don't change. A later edit reuses a copy on the page only if it is the same in every respect:
+  program, encoding, character map, flags and widths. Line grouping treats two embedded fonts
+  with the same name as one typeface, so the edited text stays in its line. The copy takes the
+  next three object numbers; a file whose numbers already reach PDFium's limit (about 25 million,
+  `kMaxObjectNumber` in `cpdf_parser.h`) is refused.
+- **The copy draws what TeX's encoding says.** pdfTeX names only the codes a document uses in
+  `/Differences`, but writes its character map, and the widths of every code in range, by TeX's
+  encoding (T1, OT1 or TS1) for every code. At the other codes PDFium draws the glyph the
+  subset's own encoding gives them, if the subset has it (for another code, or for another font
+  sharing the subset: pdfTeX embeds one subset for, say, the letters' T1 font and the symbols'
+  TS1 font), and the full program's own encoding has other glyphs there than TeX's: Latin
+  Modern's has © where T1 has ľ and Ć where it has Æ, and CM-Super's (StandardEncoding) has “
+  where T1 has ł and Ø where it has é. So a new letter whose code draws a glyph that stands for
+  another character goes to the copy as if the font lacked it (PDFium would draw some glyph, so
+  its check passes; see "The PDF's own font" below). In the copy, every code the page's text
+  draws with the font, and every code `/Differences` names, keeps its glyph: the copy serves
+  this page only, and the letters an edit keeps are drawn with it, with the codes they had. At
+  the other codes, where the character map says a code stands for a character the program's
+  glyph isn't, the copy names the program's glyph for exactly that character in its own
+  `/Differences`; a look-alike (ε for ϵ) won't do. A code keeps the PDF's width when the PDF
+  says the width is that glyph's: `/Differences` names it (or the font has none, so its codes
+  select the program's own glyphs), or the character map says the code stands for its
+  character. Otherwise it takes the glyph's width in the full program: pdfTeX's width may be for
+  another glyph, some tools give the glyphs they leave out of a subset a width of 0, and pdfTeX
+  gives 0 to codes whose glyphs are in a shared subset only for the other font.
 - **The copy must match the subset.** So that letters an edit keeps look the same, `Type1Font`
   decrypts both programs and requires the subset's font matrix, paint type, glyph encryption,
   hinting values and encoding entries, and every glyph program it has, to be identical in
@@ -346,9 +375,32 @@ papers). `Editing/GlyphPlanner.cs` and `Fonts/` handle what that takes.
   the saved copy is opened: PDFium must draw the edited text with the embedded copy (for a font
   it can't load it substitutes one of its own, which may draw every letter), and every new
   letter must have a glyph in it. The edit reports the copy; the file grows by the font's size
-  (about 30 KB).
-- Limits: only these Type 1 fonts can be copied, not Latin Modern or the T1-encoded CM-Super
-  fonts, nor fonts in other formats.
+  (about 30 KB for Computer Modern, 100 KB for Latin Modern and 140 KB for CM-Super).
+- Limits: only these Type 1 fonts can be copied, not fonts in other formats (XeLaTeX and
+  LuaLaTeX embed Latin Modern as OpenType). A copy adds the characters the PDF gives a code the
+  page doesn't draw: with a character map (pdfLaTeX writes one by default since the June 2021
+  LaTeX kernel), what the map says, where the program has a glyph that stands exactly for it (in
+  a font with `/Differences`; in one without, the program's own glyph there is the PDF's), and
+  where it says nothing, what the program's own encoding has; without one, what `/Differences`
+  and the program's own encoding name. So in T1 text it adds T1's letters but not © (LaTeX takes
+  that from a TS1 font), in OT1 Computer Modern no accented letters, and in a CM-Super copy
+  without a map no accented letter the document doesn't use, while a Latin Modern copy may add
+  what Latin Modern's own encoding has, © included, where the map leaves a code out.
+- **The PDF's own font, in any pdfTeX-style font.** The same codes can go wrong without a copy:
+  PDFium's check only asks whether some glyph is drawn. So for any symbolic Type 1 font embedded
+  as a Type 1 program whose `/Encoding` is absent or lists only `/Differences`, shipped or not
+  (Times through psnfss, too), a new letter is written with the PDF's own font only where the
+  font vouches for its code (`PdfFontInfo.Vouches`): its `/Differences` name the code, or it has
+  none, so PDFium draws the glyph the PDF names; or else its character map names the code and
+  the glyph the program's own encoding gives it stands for the same character. Of several codes
+  for a letter, one the font names is chosen. Other letters go to a copy, or are refused. The
+  copy trusts the PDF for the codes it keeps (`/Differences` and the page's, and in a font
+  without `/Differences` every code it doesn't remap), even where the map and the Adobe Glyph
+  List disagree, as the `cmap` package's Δ (U+0394, not U+2206) does, or the list lacks the
+  name, as for Computer Modern's epsilon1 (ϵ).
+  PDFium's page rewrite (encrypted PDFs, or text the content edit leaves to it) can't add a
+  copy and encodes the edited object's whole text again, by the character map or else its own
+  reverse lookup, so in a symbolic Type 1 font it only removes text objects (a whole line, say).
 
 ## Permissions
 
@@ -395,7 +447,8 @@ low-privilege process is on the roadmap.
   streams, pages drawn by several content streams or sharing one with another page, line
   operators (`'`, `"`, `TD`, `TL`), and text placed right after other text. They must keep every
   byte of the original file and the edited text's own color and spacing. Kerning and gaps kept
-  from the old text, and spaces drawn as gaps, are checked in the written content.
+  from the old text, and spaces drawn as gaps, are checked in the written content, and lines
+  placed by relative moves in the edited block must keep their exact positions.
 - Deleting whole lines is tested in the content stream and with PDFium's page rewrite, for a
   line drawn letter by letter, a line shown with `'` among other lines, invisible text placed
   right after the deleted text, text in a font PaperKnife can't write in (a predefined CJK
@@ -403,10 +456,16 @@ low-privilege process is on the roadmap.
   followed by undo; and, with PDFium's page rewrite, text whose own letter spacing or print color
   it can't write back. Edits and deletions that PDFium's rewrite would re-space invisible text
   with are refused.
-- TeX fonts are tested with a subset of CMR10 cut from the bundled copy at run time: spaces,
-  drawing new letters with a copy of the font (the PDF's font untouched, the copy reused, the
-  line kept together, widths for letters the PDF gives a width of 0, object numbers up to
-  PDFium's limit), ligatures and kerning without a ToUnicode map, and refusing subsets that
+- TeX fonts are tested with subsets of CMR10, Latin Modern and CM-Super fonts cut from the
+  bundled copies at run time: spaces, drawing new letters with a copy of the font (the PDF's
+  font untouched, the copy reused, the line kept together, widths for letters the PDF gives a
+  width of 0 or the width of another glyph, a subset shared with another font, object numbers up
+  to PDFium's limit), letters of TeX's encoding the PDF never uses, by its character map, a
+  letter whose code draws another glyph from the subset (also in a font PaperKnife doesn't ship,
+  and with PDFium's page rewrite, which then only removes text objects), the code the font names
+  among two for a letter, a map that disagrees with the Adobe Glyph List, the glyph of every
+  code the page draws kept whatever the map says, no look-alike glyphs,
+  ligatures and kerning without a ToUnicode map, and refusing subsets that
   differ from PaperKnife's font or are crafted to be read differently (a changed glyph, a stray
   token, a glyph defined twice, a stubbed subroutine a glyph calls), nonsymbolic fonts, and a
   program full of junk, which must be read quickly, as must a page that gives one font a

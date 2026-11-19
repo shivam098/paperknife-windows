@@ -47,6 +47,9 @@
     <None Include="..\..\third_party\webview2\licenses\**\*" Link="licenses\webview2\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\third_party\cswinrt\licenses\**\*" Link="licenses\cswinrt\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\third_party\amsfonts\licenses\**\*" Link="licenses\amsfonts\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\third_party\agl\licenses\**\*" Link="licenses\agl\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\third_party\lm\licenses\**\*" Link="licenses\lm\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\third_party\cm-super\licenses\**\*;..\..\third_party\cm-super\README.md" Link="licenses\cm-super\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

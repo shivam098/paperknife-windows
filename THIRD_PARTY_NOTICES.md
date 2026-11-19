@@ -17,6 +17,9 @@ next to the app, into `licenses\<component>\`.
 | [C#/WinRT](https://github.com/microsoft/CsWinRT) runtime (`WinRT.Runtime.dll`) | 2.2.0 | MIT ([text](third_party/cswinrt/licenses/LICENSE.txt)) |
 | Windows SDK projection for .NET (`Microsoft.Windows.SDK.NET.dll`, from the .NET SDK) | 10.0.19041.55 | [Microsoft Software License Terms for the Windows SDK](https://aka.ms/WinSDKLicenseURL) |
 | [AMS Type 1 Computer Modern fonts](https://ctan.org/pkg/amsfonts) (`cm*.pfb`, compiled into `PaperKnife.Core.dll`, unmodified; see [`third_party/amsfonts`](third_party/amsfonts/README.md)) | amsfonts 3.04 | SIL Open Font License 1.1 ([text](third_party/amsfonts/licenses/OFL.txt), [FAQ](third_party/amsfonts/licenses/OFL-FAQ.txt)); Copyright (c) 1997, 2009, American Mathematical Society |
+| [Latin Modern Type 1 fonts](https://ctan.org/pkg/lm) (`lm*.pfb`, separate files in `Fonts\lm`, unmodified; see [`third_party/lm`](third_party/lm/README.md)) | 2.004 (lm 2.005) | GUST Font License 1.0, which is the LaTeX Project Public License 1.3c with a request to rename modified versions ([text](third_party/lm/licenses/GUST-FONT-LICENSE.TXT), [README](third_party/lm/licenses/README-Latin-Modern.TXT), [file list](third_party/lm/licenses/MANIFEST-Latin-Modern.TXT)); Copyright 2003–2009 B. Jackowski and J. M. Nowacki |
+| [CM-Super Type 1 fonts](https://ctan.org/pkg/cm-super) (`sf*.pfb`, separate files in `Fonts\cm-super`, unmodified, a separate work; see [`third_party/cm-super`](third_party/cm-super/README.md)) | 0.3.4 | GNU General Public License, version 2 or later, with an exception for including the fonts in PostScript or PDF documents ([text](third_party/cm-super/licenses/COPYING), [exception](third_party/cm-super/licenses/README)); Copyright (c) 2001, 2002, 2008 Vladimir Volovich. Source: `fonts/ps-type1/cm-super` on [CTAN](https://ctan.org/pkg/cm-super) |
+| [Adobe Glyph List](https://github.com/adobe-type-tools/agl-aglfn) (`glyphlist.txt`, compiled into `PaperKnife.Core.dll`, unmodified; see [`third_party/agl`](third_party/agl/README.md)) | 2.0 | BSD-3-Clause ([text](third_party/agl/licenses/LICENSE.txt)); Copyright 2002-2019 Adobe |
 
 ### Libraries compiled into PDFium
 
@@ -60,5 +63,5 @@ portable ZIPs contain no Inno Setup code.
 | [xUnit.net v3](https://github.com/xunit/xunit) | Apache-2.0 |
 
 Tests generate their PDFs at run time and may load fonts installed on the machine (for example
-Arial). The only font data in this repository are the AMS fonts above; no third-party documents
-are stored in it.
+Arial). The only font data in this repository are the AMS, Latin Modern and CM-Super fonts above;
+no third-party documents are stored in it.

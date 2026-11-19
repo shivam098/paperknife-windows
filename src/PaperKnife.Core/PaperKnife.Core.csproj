@@ -16,6 +16,20 @@
     <EmbeddedResource Include="..\..\third_party\amsfonts\fonts\*.pfb" LogicalName="PaperKnife.Fonts.%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <!-- The characters glyph names stand for (see third_party/agl). -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\third_party\agl\glyphlist.txt" LogicalName="PaperKnife.glyphlist.txt" />
+  </ItemGroup>
+
+  <!--
+    Latin Modern and CM-Super ship as separate files next to the app: they are large and the same on
+    every PC, and CM-Super's license wants it kept a separate work (see third_party/lm and third_party/cm-super).
+  -->
+  <ItemGroup>
+    <None Include="..\..\third_party\lm\fonts\*.pfb" Link="Fonts\lm\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\..\third_party\cm-super\fonts\*.pfb" Link="Fonts\cm-super\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="PaperKnife.Core.Tests" />
   </ItemGroup>

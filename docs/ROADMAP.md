@@ -40,12 +40,12 @@ Milestones are ordered by value to users and by risk. Each milestone ends with a
   when it is saved.
 - **Fallback fonts with consent.** When the document's font lacks a character, offer to use a
   similar installed font, embedding only the glyphs used and only if the font's license allows
-  embedding. ✅ Done for the fonts of PDFs made with LaTeX: when a subset of a Type 1 Computer
-  Modern font lacks a letter, the edited text is drawn with a complete copy of PaperKnife's
-  identical font (AMS, SIL Open Font License), and the PDF's own font stays as it was. Still to
-  do: Latin Modern and CM-Super (T1-encoded LaTeX), TrueType and OpenType subsets (for example
-  from Word, from fonts installed on Windows when their license allows embedding), and similar
-  fonts for everything else.
+  embedding. ✅ Done for the fonts of PDFs made with pdfLaTeX: when a subset of a Type 1 Computer
+  Modern, Latin Modern or CM-Super font lacks a letter, the edited text is drawn with a complete
+  copy of PaperKnife's identical font, and the PDF's own font stays as it was. Still to do:
+  TrueType and OpenType subsets (for example from Word, from fonts installed on Windows when
+  their license allows embedding, and Latin Modern as XeLaTeX and LuaLaTeX embed it), symbols
+  LaTeX sets in a separate font (such as © in body text), and similar fonts for everything else.
 - ✅ Edit whole lines in PDFs that draw text one character or word at a time: consecutive text
   objects are grouped into runs, only the changed characters are rewritten and the rest of the
   line moves to fit. Still to do: lines split across fonts (for example the "fi" ligature in PDFs

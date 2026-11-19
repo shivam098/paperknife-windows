@@ -133,6 +133,8 @@ internal static unsafe partial class PdfiumNative
     [LibraryImport(Library)] public static partial uint FPDFTextObj_GetText(nint textObject, nint textPage, ushort* buffer, uint length);
     [LibraryImport(Library)] public static partial nuint FPDFFont_GetBaseFontName(nint font, byte* buffer, nuint length);
     [LibraryImport(Library)] public static partial int FPDFFont_GetIsEmbedded(nint font);
+    [LibraryImport(Library)] public static partial int FPDFFont_GetFlags(nint font);
+    [LibraryImport(Library)] public static partial int FPDFFont_GetFontData(nint font, byte* buffer, nuint length, nuint* outLength);
     [LibraryImport(Library)] public static partial int FPDFFont_GetGlyphWidth(nint font, uint glyph, float fontSize, float* width);
     [LibraryImport(Library)] public static partial nint FPDFFont_GetGlyphPath(nint font, uint glyph, float fontSize);
     [LibraryImport(Library)] public static partial int FPDFGlyphPath_CountGlyphSegments(nint glyphPath);

@@ -55,9 +55,9 @@ Nothing else needs to be installed.
 - **PDFs made with LaTeX**, such as résumés and papers. Their fonts have no space character, so
   PaperKnife leaves a gap between words the way LaTeX does. They also contain only the letters
   the document already uses; when you type one they lack, PaperKnife draws your text with a
-  complete copy of the same font from its own copies of LaTeX's Computer Modern fonts, after
-  checking that every letter already in the PDF is identical in it. The rest of the document
-  keeps the PDF's own font.
+  complete copy of the same font from its own copies of LaTeX's fonts (Computer Modern, Latin
+  Modern and CM-Super), after checking that every letter already in the PDF is identical in it.
+  The rest of the document keeps the PDF's own font.
 - Undo and redo, rotate and delete pages, add pages from another PDF.
 - Save as a new file. An existing file is replaced in one step and is never left half-written.
 
@@ -68,8 +68,11 @@ Nothing else needs to be installed.
 PaperKnife would rather say no than damage your document. Today it can't:
 
 - add characters that the PDF's own font doesn't contain (embedded fonts often contain only the
-  letters already used in the document), except in LaTeX's Computer Modern fonts, which it has
-  copies of;
+  letters already used in the document), except in LaTeX's Computer Modern, Latin Modern and
+  CM-Super fonts, which it has copies of. Even there, which characters it can add depends on how
+  LaTeX encoded the font: with `\usepackage[T1]{fontenc}`, in PDFs made since mid-2021, the
+  accented and other letters of that encoding; in LaTeX's default encoding with Computer Modern,
+  no accented letters. In encrypted PDFs set in fonts like these, it can only delete whole lines;
 - edit scripts that need text shaping (Hindi, Arabic, Thai and others), add line breaks or reflow
   paragraphs;
 - edit some pages of encrypted PDFs (protected by a password or by restrictions): PaperKnife can't
@@ -101,7 +104,7 @@ dotnet run --project src/PaperKnife.App -- C:\path\to\file.pdf                  
 
 The app builds for your PC's architecture by default; pass `-r win-x64` or `-r win-arm64` to
 choose. The first build downloads the Windows App SDK (several hundred megabytes). To build the
-installer and portable ZIPs yourself, run `pwsh build/package.ps1 -Version 0.4.0`; see
+installer and portable ZIPs yourself, run `pwsh build/package.ps1 -Version 0.5.0`; see
 [CONTRIBUTING.md](CONTRIBUTING.md#releasing).
 
 ## Repository layout
@@ -112,7 +115,7 @@ installer and portable ZIPs yourself, run `pwsh build/package.ps1 -Version 0.4.0
 | `src/PaperKnife.App` | The WinUI 3 desktop app. |
 | `tests/PaperKnife.Core.Tests` | Engine tests. They generate their own PDFs, so the repo contains no third-party documents. |
 | `build/`, `installer/` | Release packaging: the build script and the Inno Setup installer script. |
-| `third_party/` | License and notice texts of the components shipped with the app, and the AMS Computer Modern fonts PaperKnife draws new letters in LaTeX PDFs with. |
+| `third_party/` | License and notice texts of the components shipped with the app; the fonts PaperKnife draws new letters in LaTeX PDFs with (AMS Computer Modern, Latin Modern, CM-Super); and the Adobe Glyph List. |
 | `docs/` | [Product principles](docs/PRODUCT.md), [roadmap](docs/ROADMAP.md), [architecture](docs/ARCHITECTURE.md), [release notes](docs/releases/). |
 
 ## Other platforms

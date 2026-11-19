@@ -16,3 +16,16 @@ This product includes the AMS Type 1 Computer Modern fonts (amsfonts 3.04),
 Copyright (c) 1997, 2009, American Mathematical Society (http://www.ams.org),
 licensed under the SIL Open Font License, Version 1.1 (see
 third_party/amsfonts/licenses/OFL.txt).
+
+This product is distributed with the Latin Modern Type 1 fonts (version 2.004),
+Copyright 2003-2009 B. Jackowski and J. M. Nowacki, licensed under the GUST
+Font License (see third_party/lm/licenses/GUST-FONT-LICENSE.TXT).
+
+This product is distributed with the CM-Super Type 1 fonts (version 0.3.4),
+Copyright (c) 2001, 2002, 2008 Vladimir Volovich, as a separate work under the
+GNU General Public License, version 2 or later, with a font exception (see
+third_party/cm-super/licenses/COPYING and third_party/cm-super/licenses/README).
+
+This product includes the Adobe Glyph List (version 2.0),
+Copyright 2002-2019 Adobe (http://www.adobe.com/), licensed under the BSD
+3-Clause License (see third_party/agl/licenses/LICENSE.txt).

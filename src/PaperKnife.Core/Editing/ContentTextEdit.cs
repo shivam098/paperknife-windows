@@ -100,6 +100,16 @@ internal static unsafe class ContentTextEdit
         var support = plan.Missing.Count == 0 && plan.NewCharacters.Length > 0 && !font.IsType3
             ? TextSupport.Check(firstPiece.Font, layout.Run.FontName, plan.NewCharacters)
             : TextSupportResult.Supported;
+        if (support.IsSupported && plan.NewGlyphs.Count > 0 && FontCompletion.SelectsGlyphsByName(page, first.FontName!)
+            && plan.NewGlyphs.Where(g => !font.Vouches(g.Code, g.Text)).Select(g => g.Text).Distinct().ToList() is { Count: > 0 } other)
+        {
+            // pdfTeX's fonts name only the codes a document uses. At the others PDFium draws the
+            // glyph the subset's own encoding gives them, if the subset has it for another code or
+            // font, while the character map and the widths follow TeX's encoding. A copy of the font
+            // can draw and space such letters right; without one they are refused.
+            support = new TextSupportResult(TextSupport.MissingMessage(layout.Run.FontName, other), other);
+        }
+
         if (plan.Missing.Count > 0 || !support.IsSupported)
         {
             completion = FontCompletion.TryCreate(page, first.FontName!, out var difference);

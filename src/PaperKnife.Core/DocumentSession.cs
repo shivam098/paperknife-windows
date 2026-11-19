@@ -350,6 +350,19 @@ public sealed class DocumentSession : IDisposable
             }
         }
 
+        // PDFium's page rewrite encodes the edited object's whole text again, by the character map
+        // or else its own reverse lookup. In a symbolic Type 1 font, as pdfTeX's are, the code it
+        // picks may draw another glyph than the character, or carry the width of another one (see
+        // ContentTextEdit), and PaperKnife can't check that here. Removing objects is safe.
+        var piece = layout.Pieces[edit.First];
+        if (edit.NewText.Length > 0 && piece.IsEmbedded
+            && PdfiumNative.FPDFFont_GetFlags(piece.Font) is var flags and >= 0 && (flags & 4) != 0 && IsType1Program(piece.Font))
+        {
+            return EditResult.Rejected(
+                EditRejection.PageNotEditable,
+                $"PaperKnife can change text in the font “{layout.Run.FontName}” only by editing the page's drawing instructions directly, which it can't do on this page (for example because the PDF is encrypted). It can still delete the whole line.");
+        }
+
         // Deleting needs no rewrite check: nothing of the deleted text remains, and the checks after
         // the change cover everything else on the page, invisible text included.
         if (!edit.DeletesAll(layout.Pieces.Count))
@@ -372,6 +385,28 @@ public sealed class DocumentSession : IDisposable
         candidate = scratch.Save();
         change = applied;
         return null;
+    }
+
+    /// <summary>Whether a font is embedded as a Type 1 program, whose glyphs PDFium selects by name.</summary>
+    private static unsafe bool IsType1Program(nint font)
+    {
+        nuint length = 0;
+        if (font == 0 || PdfiumNative.FPDFFont_GetFontData(font, null, 0, &length) == 0 || length < 2 || length > int.MaxValue)
+        {
+            return false;
+        }
+
+        var data = new byte[(int)length];
+        fixed (byte* buffer = data)
+        {
+            if (PdfiumNative.FPDFFont_GetFontData(font, buffer, length, &length) == 0)
+            {
+                return false;
+            }
+        }
+
+        // A Type 1 program starts with its cleartext ("%!PS-AdobeFont" or "%!FontType1"), or a PFB segment header.
+        return (data[0] == '%' && data[1] == '!') || (data[0] == 0x80 && data[1] == 0x01);
     }
 
     /// <summary>Rotates a page clockwise by the given number of quarter turns.</summary>

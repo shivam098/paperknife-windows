@@ -15,6 +15,9 @@ internal sealed class PdfFontInfo
     // Text by code from glyph names, for the codes the ToUnicode map lacks.
     private readonly Dictionary<uint, string> _namedText = [];
     private readonly Dictionary<uint, string> _glyphNames = [];
+
+    // The codes the font's /Differences name.
+    private readonly HashSet<uint> _differenceCodes = [];
     private readonly HashSet<string>? _charProcs;
     private readonly int[]? _simpleWidths;
     private readonly Dictionary<uint, int>? _cidWidths;
@@ -84,7 +87,7 @@ internal sealed class PdfFontInfo
     private PdfFontInfo(string subtype, int codeLength, PdfFile file, CosDict font, Func<int, string?>? builtinEncoding)
         : this(subtype, codeLength)
     {
-        ReadGlyphNames(file, font, subtype, _glyphNames, builtinEncoding);
+        ReadGlyphNames(file, font, subtype, _glyphNames, _differenceCodes, builtinEncoding);
         if (subtype == "Type3")
         {
             _charProcs = file.ResolveDict(font["CharProcs"])?.Entries.Keys.ToHashSet(StringComparer.Ordinal);
@@ -147,6 +150,23 @@ internal sealed class PdfFontInfo
 
     public string? Unicode(uint code) =>
         _toUnicode is not null && _toUnicode.TryGetValue(code, out var text) ? text : _namedText.GetValueOrDefault(code);
+
+    /// <summary>The name of the glyph a code selects, when the font selects glyphs by name and PaperKnife knows it.</summary>
+    public string? GlyphName(uint code) => _glyphNames.GetValueOrDefault(code);
+
+    /// <summary>
+    /// Whether the font itself says a code draws <paramref name="text"/>, with that glyph's width,
+    /// for a font that selects glyphs by name. It does for a code its /Differences name, or any
+    /// code if it has none: PDFium draws the glyph the PDF names. pdfTeX names only the codes a
+    /// document uses, though; at the others PDFium draws the glyph the program's own encoding gives
+    /// them, if the subset has it for another code or font, and pdfTeX's width and character map
+    /// follow TeX's encoding. There only the character map can vouch, when that glyph stands for
+    /// the same character.
+    /// </summary>
+    public bool Vouches(uint code, string text) =>
+        _differenceCodes.Count == 0 || _differenceCodes.Contains(code)
+        || (_toUnicode?.ContainsKey(code) == true && GlyphName(code) is { } name
+            && Encodings.GlyphToUnicode(name) is { } own && Comparable(own) == Comparable(text));
 
     /// <summary>Whether a code draws a glyph. Only Type 3 fonts can tell; for others it is checked elsewhere.</summary>
     public bool HasGlyph(uint code) =>
@@ -220,7 +240,7 @@ internal sealed class PdfFontInfo
                 continue;
             }
 
-            codes.Add(usable.FirstOrDefault(preferred.Contains, usable[0]));
+            codes.Add(Choose(usable, preferred));
         }
 
         return codes;
@@ -233,8 +253,16 @@ internal sealed class PdfFontInfo
     public uint? CodeFor(string text, IReadOnlySet<uint> preferred)
     {
         var usable = CodesFor(text).Where(HasGlyph).ToList();
-        return usable.Count == 0 ? null : usable.FirstOrDefault(preferred.Contains, usable[0]);
+        return usable.Count == 0 ? null : Choose(usable, preferred);
     }
+
+    /// <summary>
+    /// Of the codes that stand for a text, one already used nearby, or else the lowest one the font
+    /// names itself (in /Differences or its character map) rather than through its program's own
+    /// encoding alone, whose width may be for another glyph (see <see cref="Vouches"/>).
+    /// </summary>
+    private uint Choose(List<uint> usable, IReadOnlySet<uint> preferred) =>
+        usable.FirstOrDefault(preferred.Contains, usable.FirstOrDefault(c => _differenceCodes.Contains(c) || _toUnicode?.ContainsKey(c) == true, usable[0]));
 
     private IReadOnlyList<uint> CodesFor(string text) => (_codes ??= IndexCodes()).TryGetValue(text, out var codes) ? codes : [];
 
@@ -267,7 +295,8 @@ internal sealed class PdfFontInfo
         }
     }
 
-    private static void ReadGlyphNames(PdfFile file, CosDict font, string subtype, Dictionary<uint, string> names, Func<int, string?>? builtin)
+    private static void ReadGlyphNames(
+        PdfFile file, CosDict font, string subtype, Dictionary<uint, string> names, HashSet<uint> differenceCodes, Func<int, string?>? builtin)
     {
         string? baseEncoding = null;
         CosArray? differences = null;
@@ -307,6 +336,7 @@ internal sealed class PdfFontInfo
                     next = (int)number.Value;
                     break;
                 case CosName name when next is >= 0 and < 256:
+                    differenceCodes.Add((uint)next);
                     names[(uint)next++] = name.Value;
                     break;
             }
@@ -360,6 +390,9 @@ internal sealed class PdfFontInfo
         return symbolic ? builtin ?? EmbeddedEncoding(file, descriptor) ?? Encodings.StandardName : Encodings.StandardName;
     }
 
+    // Text as glyph names and character maps are compared (as FontCompletion does).
+    private static string Comparable(string text) => text.Normalize(NormalizationForm.FormKC).Replace('\u00A0', ' ');
+
     private static Func<int, string?>? Predefined(string? name) => name switch
     {
         "WinAnsiEncoding" => Encodings.WinAnsiName,
@@ -386,12 +419,13 @@ internal sealed class PdfFontInfo
                 return null;
             }
 
-            return encoding.Standard ? Encodings.StandardName : code => encoding.Names.GetValueOrDefault(code);
+            // A program that says it uses StandardEncoding gets every code of it, as in PDFium.
+            return encoding.Standard ? Encodings.FullStandardName : code => encoding.Names.GetValueOrDefault(code);
         }
     }
 
     /// <summary>A ToUnicode map by code, read once per map, however many fonts share it.</summary>
-    private static IReadOnlyDictionary<uint, string>? ToUnicode(PdfFile file, CosObject? entry)
+    internal static IReadOnlyDictionary<uint, string>? ToUnicode(PdfFile file, CosObject? entry)
     {
         return entry is CosRef reference ? file.Derived("ToUnicode", reference.Number, Read) : Read();
 

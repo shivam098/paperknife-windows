@@ -117,6 +117,9 @@ internal sealed class Type1Font
     public static (bool Standard, IReadOnlyDictionary<int, string> Names)? ReadEncoding(byte[] cleartext) =>
         ReadCleartext(cleartext) is { } header ? (header.StandardEncoding, header.Encoding) : null;
 
+    /// <summary>The PostScript name a program gives itself in its cleartext part, or null when it can't be read.</summary>
+    public static string? ReadFontName(byte[] cleartext) => ReadCleartext(cleartext)?.Name;
+
     /// <summary>The advance width of a glyph in text space units (1000 per em for most fonts), or null.</summary>
     public double? Width(string glyph)
     {

@@ -5,7 +5,7 @@ namespace PaperKnife.Core.Content;
 /// <summary>
 /// Character encodings of simple fonts (ISO 32000-1, Annex D) and glyph names mapped to Unicode,
 /// for fonts without a ToUnicode map. Covers WinAnsiEncoding fully, and the ASCII range of
-/// StandardEncoding and MacRomanEncoding.
+/// StandardEncoding and MacRomanEncoding; glyph names also by the Adobe Glyph List.
 /// </summary>
 internal static class Encodings
 {
@@ -43,6 +43,21 @@ internal static class Encodings
         "\u20AC\0\u201A\u0192\u201E\u2026\u2020\u2021\u02C6\u2030\u0160\u2039\u0152\0\u017D\0" +
         "\0\u2018\u2019\u201C\u201D\u2022\u2013\u2014\u02DC\u2122\u0161\u203A\u0153\0\u017E\u0178";
 
+    // StandardEncoding glyph names for codes above the ASCII range.
+    private static readonly Dictionary<int, string> StandardHigh = new()
+    {
+        [0xA1] = "exclamdown", [0xA2] = "cent", [0xA3] = "sterling", [0xA4] = "fraction", [0xA5] = "yen", [0xA6] = "florin",
+        [0xA7] = "section", [0xA8] = "currency", [0xA9] = "quotesingle", [0xAA] = "quotedblleft", [0xAB] = "guillemotleft",
+        [0xAC] = "guilsinglleft", [0xAD] = "guilsinglright", [0xAE] = "fi", [0xAF] = "fl", [0xB1] = "endash", [0xB2] = "dagger",
+        [0xB3] = "daggerdbl", [0xB4] = "periodcentered", [0xB6] = "paragraph", [0xB7] = "bullet", [0xB8] = "quotesinglbase",
+        [0xB9] = "quotedblbase", [0xBA] = "quotedblright", [0xBB] = "guillemotright", [0xBC] = "ellipsis", [0xBD] = "perthousand",
+        [0xBF] = "questiondown", [0xC1] = "grave", [0xC2] = "acute", [0xC3] = "circumflex", [0xC4] = "tilde", [0xC5] = "macron",
+        [0xC6] = "breve", [0xC7] = "dotaccent", [0xC8] = "dieresis", [0xCA] = "ring", [0xCB] = "cedilla", [0xCD] = "hungarumlaut",
+        [0xCE] = "ogonek", [0xCF] = "caron", [0xD0] = "emdash", [0xE1] = "AE", [0xE3] = "ordfeminine", [0xE8] = "Lslash",
+        [0xE9] = "Oslash", [0xEA] = "OE", [0xEB] = "ordmasculine", [0xF1] = "ae", [0xF5] = "dotlessi", [0xF8] = "lslash",
+        [0xF9] = "oslash", [0xFA] = "oe", [0xFB] = "germandbls",
+    };
+
     private static readonly Dictionary<string, string> GlyphUnicode = BuildGlyphUnicode();
 
     public static string? WinAnsiName(int code) =>
@@ -56,6 +71,9 @@ internal static class Encodings
         >= 32 and <= 126 => WinAnsiName(code),
         _ => null,
     };
+
+    /// <summary>StandardEncoding for every code (ISO 32000-1, D.2), for font programs that say they use it.</summary>
+    public static string? FullStandardName(int code) => code <= 126 ? StandardName(code) : StandardHigh.GetValueOrDefault(code);
 
     /// <summary>MacRomanEncoding, for the ASCII range only.</summary>
     public static string? MacRomanName(int code) => code is >= 32 and <= 126 ? WinAnsiName(code) : null;
@@ -157,6 +175,55 @@ internal static class Encodings
             map.TryAdd(name, text);
         }
 
+        // Every other name the Adobe Glyph List has, as FreeType reads them for PDFium.
+        foreach (var (name, text) in AdobeGlyphList())
+        {
+            map.TryAdd(name, text);
+        }
+
         return map;
+    }
+
+    /// <summary>The names in the Adobe Glyph List (third_party/agl, compiled in) and the text each stands for.</summary>
+    private static List<(string Name, string Text)> AdobeGlyphList()
+    {
+        var entries = new List<(string, string)>();
+        using var stream = typeof(Encodings).Assembly.GetManifestResourceStream("PaperKnife.glyphlist.txt");
+        if (stream is null)
+        {
+            return entries;
+        }
+
+        using var reader = new StreamReader(stream, System.Text.Encoding.ASCII);
+        var text = new System.Text.StringBuilder();
+        while (reader.ReadLine() is { } line)
+        {
+            var separator = line.IndexOf(';', StringComparison.Ordinal);
+            if (line.StartsWith('#') || separator <= 0)
+            {
+                continue;
+            }
+
+            // One or more scalar values, in hexadecimal, separated by spaces.
+            text.Clear();
+            foreach (var value in line[(separator + 1)..].Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                if (!int.TryParse(value, NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var scalar)
+                    || scalar is > 0x10FFFF or (>= 0xD800 and <= 0xDFFF))
+                {
+                    text.Clear();
+                    break;
+                }
+
+                text.Append(char.ConvertFromUtf32(scalar));
+            }
+
+            if (text.Length > 0)
+            {
+                entries.Add((line[..separator], text.ToString()));
+            }
+        }
+
+        return entries;
     }
 }

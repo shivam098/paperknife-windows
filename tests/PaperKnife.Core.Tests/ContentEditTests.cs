@@ -204,6 +204,26 @@ public sealed class ContentEditTests
         }
     }
 
+    [Fact]
+    public void ReplaceText_InBlockOfRelativeMoves_LeavesTheOtherLinesExactlyWhereTheyWere()
+    {
+        // PDFium adds up Td moves in single precision. The rewritten block places each line with
+        // an explicit Tm, which must land on the same positions to the bit: a glyph a fraction of
+        // a pixel off may round to another pixel, and the edit is then refused.
+        const string Content =
+            "BT /F1 10 Tf 392.432 685.111 Td (First) Tj 56.276 -11.956 Td (Second) Tj -303.981 -11.956 Td (Third) Tj 0 -11.955 Td (Fourth) Tj ET\n";
+        using var session = Open(RawPdf.SinglePage(Content));
+        var others = new[] { "Second", "Third", "Fourth" }.Select(t => Find(session, t)).ToList();
+
+        var result = session.ReplaceText(0, Find(session, "First").ObjectIndex, "1st");
+
+        Assert.Equal(EditStatus.Applied, result.Status);
+        foreach (var other in others)
+        {
+            Assert.Equal(other.Bounds, Find(session, other.Text).Bounds);
+        }
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)] // PDFium rewrites the page

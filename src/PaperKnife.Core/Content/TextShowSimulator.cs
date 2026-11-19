@@ -135,7 +135,11 @@ internal static class TextShowSimulator
         var marks = new Stack<bool>();
         var state = new GraphicsState();
         var textMatrix = PdfMatrix.Identity;
-        double lineX = 0, lineY = 0, x = 0, y = 0;
+
+        // The start of the line in single precision, as PDFium keeps it (CFX_PointF), so text
+        // rewritten with an explicit Tm (see ContentTextEdit) lands exactly where it was.
+        float lineX = 0, lineY = 0;
+        double x = 0, y = 0;
         var known = true;
         var block = -1;
 
@@ -168,7 +172,8 @@ internal static class TextShowSimulator
                     block = blocks.Count;
                     blocks.Add(new TextBlock(i));
                     textMatrix = PdfMatrix.Identity;
-                    lineX = lineY = x = y = 0;
+                    lineX = lineY = 0;
+                    x = y = 0;
                     known = true;
                     break;
                 case "ET":
@@ -199,7 +204,8 @@ internal static class TextShowSimulator
                     break;
                 case "Tm" when PdfMatrix.FromOperands(o) is { } matrix:
                     textMatrix = matrix;
-                    lineX = lineY = x = y = 0;
+                    lineX = lineY = 0;
+                    x = y = 0;
                     known = true;
                     break;
                 case "Td" when Number(o, 0) is { } tx && Number(o, 1) is { } ty:
@@ -256,8 +262,8 @@ internal static class TextShowSimulator
 
         void MoveTo(double tx, double ty)
         {
-            lineX += tx;
-            lineY += ty;
+            lineX += (float)tx;
+            lineY += (float)ty;
             x = lineX;
             y = lineY;
             known = true;
@@ -265,7 +271,7 @@ internal static class TextShowSimulator
 
         void NextLine()
         {
-            lineY -= state.Leading;
+            lineY -= (float)state.Leading;
             x = lineX;
             y = lineY;
             known = true;
