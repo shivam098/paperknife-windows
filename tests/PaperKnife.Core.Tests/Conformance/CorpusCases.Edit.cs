@@ -117,6 +117,13 @@ internal static partial class CorpusCases
             [ReplaceObject(2, "x")]),
 
         new(
+            "edit-font-character-map-needing-a-dictionary",
+            "Replacing a line whose font's character map is Flate data asking for a preset dictionary, which a PDF can't give: the map counts as damaged, the edit applies, and undo restores the file.",
+            "zlib refuses such data with an exception PaperKnife didn't treat as damaged data, so reading the page failed and the page couldn't even be shown (found while porting PaperKnife to Android, fixed after v0.5.0).",
+            CharacterMapNeedingADictionary,
+            [Replace("Hello World", "Hello PaperKnife"), Undo()]),
+
+        new(
             "edit-delete-line-content-stream",
             "Replacing a line with nothing deletes it in the content stream, the other line staying where it was; undo brings it back.",
             "Deleting a whole line was refused (“isn't supported yet”) until v0.4.0; the deletion must be appended to the file and undone exactly.",
@@ -162,4 +169,18 @@ internal static partial class CorpusCases
             () => TestPdfs.WithEmbeddedFont(TestPdfs.DejaVuSansPath, "Invoice 2024"),
             [Replace("Invoice 2024", "Invoice\u30002025"), Replace("Invoice 2024", "Invoice 2025")]),
     ];
+
+    /// <summary>
+    /// The base page, with Helvetica's character map stored as Flate data that asks for a preset
+    /// dictionary (a zlib header with FDICT set, then a stored block), which a PDF can't give.
+    /// </summary>
+    private static PdfSnapshot CharacterMapNeedingADictionary() => RawPdf.WriteWithTable(
+    [
+        "<< /Type /Catalog /Pages 2 0 R >>",
+        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+        RawPdf.Stream(RawPdf.BaseContent),
+        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding /ToUnicode 6 0 R >>",
+        "<< /Length 12 /Filter /FlateDecode >>\nstream\n\u0078\u00BB\u0000\u0000\u0000\u0001\u0001\u0001\u0000\u00FE\u00FF\u0041\nendstream",
+    ]);
 }

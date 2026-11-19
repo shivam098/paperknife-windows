@@ -75,6 +75,18 @@ public sealed class SyntaxTests
     }
 
     [Fact]
+    public void StreamFilters_TreatFlateDataThatNeedsAPresetDictionaryAsDamaged()
+    {
+        // A zlib header asking for a preset dictionary (FDICT), which a PDF can't give, then a
+        // stored block: .NET's ZLibStream throws ZLibException for it, not InvalidDataException.
+        byte[] data = [0x78, 0xBB, 0, 0, 0, 1, 0x01, 0x01, 0x00, 0xFE, 0xFF, (byte)'A'];
+
+        Assert.Null(StreamFilters.Decode(data, ["FlateDecode"], [], out var problem));
+        Assert.NotNull(problem);
+        Assert.Null(StreamFilters.InflatePrefix(data, 1));
+    }
+
+    [Fact]
     public void FontInfo_GivesUpQuicklyOnWidthMapsTooLargeToRead()
     {
         var file = PdfFile.TryOpen(RawPdf.SinglePage(RawPdf.BaseContent).Memory, out _)!;

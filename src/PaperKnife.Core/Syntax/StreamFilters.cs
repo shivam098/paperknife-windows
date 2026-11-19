@@ -72,7 +72,7 @@ internal static class StreamFilters
 
             return read == length ? output : output[..read];
         }
-        catch (InvalidDataException)
+        catch (Exception ex) when (IsDamaged(ex))
         {
             return null;
         }
@@ -98,11 +98,19 @@ internal static class StreamFilters
 
             return output.ToArray();
         }
-        catch (InvalidDataException)
+        catch (Exception ex) when (IsDamaged(ex))
         {
             return null;
         }
     }
+
+    /// <summary>
+    /// Whether zlib refused the data. Data that asks for a preset dictionary, which a PDF can't
+    /// give, makes it throw System.IO.Compression.ZLibException, an <see cref="IOException"/> that
+    /// isn't in .NET's public API, rather than <see cref="InvalidDataException"/>. The data is read
+    /// from memory, so no other IOException can occur.
+    /// </summary>
+    private static bool IsDamaged(Exception ex) => ex is InvalidDataException or IOException;
 
     private static byte[]? Predict(byte[]? data, CosDict? parameters)
     {
