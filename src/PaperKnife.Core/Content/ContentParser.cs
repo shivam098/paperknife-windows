@@ -67,7 +67,7 @@ internal static class ContentParser
                     data++;
                 }
 
-                if (UnfilteredLength(dict) is { } length && data + length <= span.Length)
+                if (UnfilteredLength(dict) is { } length && length <= span.Length - data)
                 {
                     var after = new PdfLexer(lexer.Data, data + length);
                     var end = after.Next();
@@ -122,7 +122,20 @@ internal static class ContentParser
         var bits = mask ? 1 : Number("BPC", "BitsPerComponent");
         var width = Number("W", "Width");
         var height = Number("H", "Height");
-        return components is { } c && bits is { } b && width is { } w && height is { } h ? h * (((w * c * b) + 7) / 8) : null;
+        return components is { } c && bits is { } b && width is { } w && height is { } h ? Size(c, b, w, h) : null;
+    }
+
+    /// <summary>The size of an image's data, or null when it doesn't fit in an int, as no content stream's can.</summary>
+    private static int? Size(int components, int bits, int width, int height)
+    {
+        try
+        {
+            return checked(height * (((width * components * bits) + 7) / 8));
+        }
+        catch (OverflowException)
+        {
+            return null;
+        }
     }
 }
 

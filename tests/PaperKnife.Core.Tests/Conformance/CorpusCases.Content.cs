@@ -13,6 +13,13 @@ internal static partial class CorpusCases
             [Replace("Hello World", "Hello PaperKnife")]),
 
         new(
+            "content-inline-image-whose-size-overflows",
+            "Editing a line on a page with an inline image whose data size overflows 32 bits applies, appended to the file, and undo restores the file.",
+            "The size wrapped around and pointed back at an earlier EI, so reading the page went back and read the image again forever, and PaperKnife hung (found while porting PaperKnife to the Mac, fixed after v0.5.0).",
+            () => RawPdf.SinglePage(RawPdf.BaseContent + "EI BI /W 536870910 /H 42 /CS /G /BPC 8 ID x EI\n"),
+            [Replace("Hello World", "Hello PaperKnife"), Undo()]),
+
+        new(
             "content-keeps-shading",
             "Editing a line on a page with a shading (a gradient) applies, appended to the file.",
             "PDFium's page rewrite can't write shadings back, so such pages were refused; edits in the content stream keep every other byte (v0.2.0).",

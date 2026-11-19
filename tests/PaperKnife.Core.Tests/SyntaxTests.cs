@@ -40,6 +40,20 @@ public sealed class SyntaxTests
         Assert.Equal(new[] { "q", "cm", "BI", "Q", "BT", "Tf", "Td", "TJ", "ET" }, ops.Select(o => o.Operator));
     }
 
+    [Fact(Timeout = 10_000)]
+    public async Task ContentParser_SkipsInlineImageDataWhoseSizeOverflows()
+    {
+        // 536870910 gray bytes a row overflow 32 bits; wrapped, the size of 42 rows pointed back at
+        // the first EI, so reading went back to it and read the image again, forever.
+        var content = Encoding.Latin1.GetBytes("EI BI /W 536870910 /H 42 /CS /G /BPC 8 ID x EI");
+
+        var ops = await Task.Run(() => ContentParser.Parse(content), TestContext.Current.CancellationToken);
+
+        Assert.NotNull(ops);
+        Assert.Equal(new[] { "EI", "BI" }, ops.Select(o => o.Operator));
+        Assert.Equal(content.Length, ops[1].End);
+    }
+
     [Fact]
     public void IncrementalUpdate_KeepsEveryOriginalByteAndReplacesTheStream()
     {
