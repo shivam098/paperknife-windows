@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Deterministic>true</Deterministic>
-    <Version>0.5.0</Version>
+    <Version>0.5.1</Version>
     <Product>PaperKnife</Product>
     <Company>The PaperKnife Authors</Company>
     <Copyright>Copyright (c) The PaperKnife Authors</Copyright>

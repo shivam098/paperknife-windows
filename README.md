@@ -104,7 +104,7 @@ dotnet run --project src/PaperKnife.App -- C:\path\to\file.pdf                  
 
 The app builds for your PC's architecture by default; pass `-r win-x64` or `-r win-arm64` to
 choose. The first build downloads the Windows App SDK (several hundred megabytes). To build the
-installer and portable ZIPs yourself, run `pwsh build/package.ps1 -Version 0.5.0`; see
+installer and portable ZIPs yourself, run `pwsh build/package.ps1 -Version 0.5.1`; see
 [CONTRIBUTING.md](CONTRIBUTING.md#releasing).
 
 ## Repository layout
@@ -120,11 +120,13 @@ installer and portable ZIPs yourself, run `pwsh build/package.ps1 -Version 0.5.0
 
 ## Other platforms
 
-PaperKnife is planned as a separate native app per platform:
-[Android](https://github.com/shivam098/paperknife-android),
-[iOS](https://github.com/shivam098/paperknife-ios) and
-[macOS](https://github.com/shivam098/paperknife-macos). Windows is the lead implementation; the
-shared product principles live in [docs/PRODUCT.md](docs/PRODUCT.md).
+PaperKnife is a separate native app per platform.
+[PaperKnife for Mac](https://github.com/shivam098/paperknife-macos) and
+[PaperKnife for Android](https://github.com/shivam098/paperknife-android) run this engine, ported
+line by line, and every app must pass the same [conformance tests](conformance/README.md), so they
+edit the same PDFs the same way. [iOS](https://github.com/shivam098/paperknife-ios) is planned.
+Windows is the lead implementation; the shared product principles live in
+[docs/PRODUCT.md](docs/PRODUCT.md).
 
 ## Contributing
 

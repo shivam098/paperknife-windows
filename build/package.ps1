@@ -11,10 +11,10 @@ x64 and Arm64, then writes to the output folder:
 Inno Setup is downloaded through NuGet (build\tools.proj), so nothing is installed system-wide.
 
 .EXAMPLE
-pwsh build/package.ps1 -Version 0.5.0
+pwsh build/package.ps1 -Version 0.5.1
 #>
 param(
-    [string]$Version = '0.5.0',
+    [string]$Version = '0.5.1',
     [string]$OutputDirectory = (Join-Path $PSScriptRoot '..\artifacts\release')
 )
 
