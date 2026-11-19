@@ -1,0 +1,309 @@
+{
+  "format": 1,
+  "id": "content-line-operators-replace",
+  "title": "Replacing a line shown with the ' operator, in a block that also uses \", TD and TL, leaves the other lines exactly where they were.",
+  "guards": "The line operators ', \", TD and TL move to the next line by the leading, so rewriting one line must keep the leading and every other line's position (v0.2.0).",
+  "document": "documents/ebd1ff945250.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "First line",
+            "object": 0,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.98, 599.87, 116.84, 608.59]
+          },
+          {
+            "text": "Second line",
+            "object": 1,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.54, 585.87, 134.21, 594.74]
+          },
+          {
+            "text": "Third line",
+            "object": 2,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.28, 571.87, 122.85, 580.59]
+          },
+          {
+            "text": "Fourth",
+            "object": 3,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.98, 551.87, 105.86, 560.59]
+          },
+          {
+            "text": "After",
+            "object": 4,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72, 399.87, 97.51, 408.74]
+          },
+          {
+            "text": "Next",
+            "object": 5,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.91, 379.87, 96.59, 388.59]
+          }
+        ],
+        "blockers": [],
+        "content": "de410af4c1c96b18addac41e817f6d8058a2fc3724c930d12915d6df645e0610",
+        "fonts": [
+          {
+            "name": "F1",
+            "subtype": "Type1",
+            "baseFont": "Helvetica",
+            "firstChar": null,
+            "lastChar": null,
+            "widths": null,
+            "encoding": "WinAnsiEncoding",
+            "toUnicode": false,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          },
+          {
+            "name": "F2",
+            "subtype": "Type1",
+            "baseFont": "Helvetica",
+            "firstChar": 65,
+            "lastChar": 68,
+            "widths": [667, 1000, 722, 722],
+            "encoding": {
+              "base": "WinAnsiEncoding",
+              "differences": {
+                "66": "A"
+              }
+            },
+            "toUnicode": false,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          },
+          {
+            "name": "F3",
+            "subtype": "Type3",
+            "baseFont": null,
+            "firstChar": 97,
+            "lastChar": 99,
+            "widths": [500, 600, 700],
+            "encoding": {
+              "base": null,
+              "differences": {
+                "97": "a",
+                "98": "b",
+                "99": "c"
+              }
+            },
+            "toUnicode": true,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "Second line",
+      "text": "2nd line",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "Text updated. Verified: nothing else on this page changed.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": {
+            "text": "2nd line",
+            "object": 1,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.35, 585.87, 113.53, 594.63]
+          }
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "First line",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 12,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.98, 599.87, 116.84, 608.59]
+                },
+                {
+                  "text": "2nd line",
+                  "object": 1,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 12,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.35, 585.87, 113.53, 594.63]
+                },
+                {
+                  "text": "Third line",
+                  "object": 2,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 12,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.28, 571.87, 122.85, 580.59]
+                },
+                {
+                  "text": "Fourth",
+                  "object": 3,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 12,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.98, 551.87, 105.86, 560.59]
+                },
+                {
+                  "text": "After",
+                  "object": 4,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 12,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72, 399.87, 97.51, 408.74]
+                },
+                {
+                  "text": "Next",
+                  "object": 5,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 12,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.91, 379.87, 96.59, 388.59]
+                }
+              ],
+              "blockers": [],
+              "content": "6e1b7e08ea47b94523c6a3ef9393bd3dff6e4f0d0f33c00684118367241fa18d",
+              "fonts": [
+                {
+                  "name": "F1",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": null,
+                  "lastChar": null,
+                  "widths": null,
+                  "encoding": "WinAnsiEncoding",
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                },
+                {
+                  "name": "F2",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": 65,
+                  "lastChar": 68,
+                  "widths": [667, 1000, 722, 722],
+                  "encoding": {
+                    "base": "WinAnsiEncoding",
+                    "differences": {
+                      "66": "A"
+                    }
+                  },
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                },
+                {
+                  "name": "F3",
+                  "subtype": "Type3",
+                  "baseFont": null,
+                  "firstChar": 97,
+                  "lastChar": 99,
+                  "widths": [500, 600, 700],
+                  "encoding": {
+                    "base": null,
+                    "differences": {
+                      "97": "a",
+                      "98": "b",
+                      "99": "c"
+                    }
+                  },
+                  "toUnicode": true,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

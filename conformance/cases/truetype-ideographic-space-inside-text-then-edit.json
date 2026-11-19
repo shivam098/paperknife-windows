@@ -1,0 +1,257 @@
+{
+  "format": 1,
+  "id": "truetype-ideographic-space-inside-text-then-edit",
+  "title": "An ideographic space (U+3000) between two words is refused, then the same edit without it applies.",
+  "guards": "PDFium silently draws characters a font lacks as its missing-glyph box (v0.1.0); a refused edit must leave the session exactly as it was.",
+  "document": "documents/fce2ca9460ae.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Invoice 2024",
+            "object": 0,
+            "objects": 1,
+            "font": "DejaVuSans",
+            "size": 20,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [73.96, 699.74, 199.5, 715.42]
+          },
+          {
+            "text": "Unrelated line",
+            "object": 1,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.95, 639.87, 145.54, 648.59]
+          }
+        ],
+        "blockers": [],
+        "content": "8c456a2433142179462401045516f65129d2749de52af667d38c9de18cc442d8",
+        "fonts": [
+          {
+            "name": "FXF1",
+            "subtype": "Type0",
+            "baseFont": "DejaVuSans",
+            "firstChar": null,
+            "lastChar": null,
+            "widths": null,
+            "encoding": "Identity-H",
+            "toUnicode": true,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          },
+          {
+            "name": "FXF2",
+            "subtype": "Type1",
+            "baseFont": "Helvetica",
+            "firstChar": null,
+            "lastChar": null,
+            "widths": null,
+            "encoding": "WinAnsiEncoding",
+            "toUnicode": false,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "Invoice 2024",
+      "text": "Invoice\u30002025",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Rejected",
+          "rejection": "UnsupportedCharacters",
+          "message": "The font “DejaVuSans” in this PDF doesn't contain: U+3000",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": ["\u3000"],
+          "run": null
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": false,
+          "canUndo": false,
+          "canRedo": false,
+          "sameAs": 0,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Invoice 2024",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "DejaVuSans",
+                  "size": 20,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [73.96, 699.74, 199.5, 715.42]
+                },
+                {
+                  "text": "Unrelated line",
+                  "object": 1,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 12,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.95, 639.87, 145.54, 648.59]
+                }
+              ],
+              "blockers": [],
+              "content": "8c456a2433142179462401045516f65129d2749de52af667d38c9de18cc442d8",
+              "fonts": [
+                {
+                  "name": "FXF1",
+                  "subtype": "Type0",
+                  "baseFont": "DejaVuSans",
+                  "firstChar": null,
+                  "lastChar": null,
+                  "widths": null,
+                  "encoding": "Identity-H",
+                  "toUnicode": true,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                },
+                {
+                  "name": "FXF2",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": null,
+                  "lastChar": null,
+                  "widths": null,
+                  "encoding": "WinAnsiEncoding",
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "Invoice 2024",
+      "text": "Invoice 2025",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "Text updated. Verified: nothing else on this page changed.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": {
+            "text": "Invoice 2025",
+            "object": 0,
+            "objects": 1,
+            "font": "DejaVuSans",
+            "size": 20,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [73.96, 699.74, 198.88, 715.42]
+          }
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Invoice 2025",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "DejaVuSans",
+                  "size": 20,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [73.96, 699.74, 198.88, 715.42]
+                },
+                {
+                  "text": "Unrelated line",
+                  "object": 1,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 12,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.95, 639.87, 145.54, 648.59]
+                }
+              ],
+              "blockers": [],
+              "content": "e65b2d658ac2f7f2b63c2103702e4742786e75d7fe5d238ae2a1dece637af262",
+              "fonts": [
+                {
+                  "name": "FXF1",
+                  "subtype": "Type0",
+                  "baseFont": "DejaVuSans",
+                  "firstChar": null,
+                  "lastChar": null,
+                  "widths": null,
+                  "encoding": "Identity-H",
+                  "toUnicode": true,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                },
+                {
+                  "name": "FXF2",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": null,
+                  "lastChar": null,
+                  "widths": null,
+                  "encoding": "WinAnsiEncoding",
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

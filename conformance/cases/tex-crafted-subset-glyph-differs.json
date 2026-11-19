@@ -1,0 +1,135 @@
+{
+  "format": 1,
+  "id": "tex-crafted-subset-glyph-differs",
+  "title": "Typing new letters is refused when the subset's “o” has another glyph's program, so the subset isn't part of PaperKnife's CMR10.",
+  "guards": "The Type 1 reader is strict: a crafted subset that differs from the bundled font must not get a copy that draws other glyphs (v0.3.0).",
+  "document": "documents/c314e91f97f3.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Hello world",
+            "object": 0,
+            "objects": 1,
+            "font": "CMR10",
+            "size": 24,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.79, 699.76, 191.28, 716.66]
+          },
+          {
+            "text": "older",
+            "object": 1,
+            "objects": 1,
+            "font": "CMR10",
+            "size": 12,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.34, 659.88, 97.68, 668.33]
+          }
+        ],
+        "blockers": [],
+        "content": "27b574035d2ad8984704a2b874e452931e62fae2f3b22781b2b9a8505b98dfe0",
+        "fonts": [
+          {
+            "name": "F1",
+            "subtype": "Type1",
+            "baseFont": "AAAAAA+CMR10",
+            "firstChar": 72,
+            "lastChar": 119,
+            "widths": [750, 361, 513, 777, 625, 916, 750, 777, 680, 777, 736, 555, 722, 750, 750, 1027, 750, 750, 611, 277, 500, 277, 500, 277, 277, 500, 555, 444, 555, 444, 305, 500, 555, 277, 305, 527, 277, 833, 555, 500, 555, 527, 391, 394, 388, 555, 527, 722],
+            "encoding": null,
+            "toUnicode": false,
+            "flags": 4,
+            "fontFile": "FontFile",
+            "programLength": 16296
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "Hello world",
+      "text": "Hello Kitty",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Rejected",
+          "rejection": "UnsupportedCharacters",
+          "message": "The font “CMR10” in this PDF doesn't contain: K, i, t, y. PaperKnife has its own copy of this font but can't use it here: in this PDF its glyph “o” differs.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": ["K", "i", "t", "y"],
+          "run": null
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": false,
+          "canUndo": false,
+          "canRedo": false,
+          "sameAs": 0,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Hello world",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "CMR10",
+                  "size": 24,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.79, 699.76, 191.28, 716.66]
+                },
+                {
+                  "text": "older",
+                  "object": 1,
+                  "objects": 1,
+                  "font": "CMR10",
+                  "size": 12,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.34, 659.88, 97.68, 668.33]
+                }
+              ],
+              "blockers": [],
+              "content": "27b574035d2ad8984704a2b874e452931e62fae2f3b22781b2b9a8505b98dfe0",
+              "fonts": [
+                {
+                  "name": "F1",
+                  "subtype": "Type1",
+                  "baseFont": "AAAAAA+CMR10",
+                  "firstChar": 72,
+                  "lastChar": 119,
+                  "widths": [750, 361, 513, 777, 625, 916, 750, 777, 680, 777, 736, 555, 722, 750, 750, 1027, 750, 750, 611, 277, 500, 277, 500, 277, 277, 500, 555, 444, 555, 444, 305, 500, 555, 277, 305, 527, 277, 833, 555, 500, 555, 527, 391, 394, 388, 555, 527, 722],
+                  "encoding": null,
+                  "toUnicode": false,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 16296
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -19,4 +19,9 @@
     <ProjectReference Include="..\..\src\PaperKnife.Core\PaperKnife.Core.csproj" />
   </ItemGroup>
 
+  <!-- DejaVu Sans, which the conformance corpus embeds where the other tests use Arial (see Fonts/README.md). -->
+  <ItemGroup>
+    <None Include="Fonts\DejaVuSans.ttf" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

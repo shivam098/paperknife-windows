@@ -187,7 +187,7 @@ public sealed class TextRunTests
     /// Content that draws <paramref name="text"/> in 12 pt from (72, 700), one text object per
     /// character, each advancing by its width in thousandths of an em.
     /// </summary>
-    private static string OneObjectPerCharacter(string font, string text, params int[] widths)
+    internal static string OneObjectPerCharacter(string font, string text, params int[] widths)
     {
         var content = new StringBuilder();
         var x = 72.0;

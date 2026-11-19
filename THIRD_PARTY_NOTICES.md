@@ -61,7 +61,10 @@ portable ZIPs contain no Inno Setup code.
 | [.NET SDK](https://github.com/dotnet/sdk) | MIT |
 | [Microsoft.Windows.SDK.BuildTools](https://aka.ms/WinSDKLicenseURL) and Microsoft.Windows.SDK.BuildTools.MSIX | Microsoft Software License Terms |
 | [xUnit.net v3](https://github.com/xunit/xunit) | Apache-2.0 |
+| [DejaVu Sans](https://dejavu-fonts.github.io/) 2.37 (`DejaVuSans.ttf`, unmodified, in [`tests/PaperKnife.Core.Tests/Fonts`](tests/PaperKnife.Core.Tests/Fonts/README.md); not shipped with the app) | Bitstream Vera Fonts license, with DejaVu's changes in the public domain ([text](tests/PaperKnife.Core.Tests/Fonts/DejaVu-LICENSE.txt)) |
 
 Tests generate their PDFs at run time and may load fonts installed on the machine (for example
-Arial). The only font data in this repository are the AMS, Latin Modern and CM-Super fonts above;
-no third-party documents are stored in it.
+Arial). The font data in this repository are the AMS, Latin Modern and CM-Super fonts above and,
+for the tests only, DejaVu Sans. The [conformance corpus](conformance/README.md) stores PDFs the
+tests generated, which embed subsets or complete copies of those fonts; no third-party documents
+are stored in this repository.

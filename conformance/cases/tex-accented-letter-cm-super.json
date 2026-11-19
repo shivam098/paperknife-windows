@@ -1,0 +1,157 @@
+{
+  "format": 1,
+  "id": "tex-accented-letter-cm-super",
+  "title": "Typing é, which the PDF never uses, in CM-Super is refused, naming é: the font's own encoding (StandardEncoding) has no é.",
+  "guards": "A letter no code reaches must be refused, not drawn with whatever glyph another code has (v0.5.0).",
+  "document": "documents/6e9924f50607.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Hello world",
+            "object": 0,
+            "objects": 1,
+            "font": "SFRM1000",
+            "size": 24,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.79, 699.78, 191.21, 716.68]
+          },
+          {
+            "text": "older",
+            "object": 1,
+            "objects": 1,
+            "font": "SFRM1000",
+            "size": 12,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.34, 659.89, 97.67, 668.34]
+          }
+        ],
+        "blockers": [],
+        "content": "27b574035d2ad8984704a2b874e452931e62fae2f3b22781b2b9a8505b98dfe0",
+        "fonts": [
+          {
+            "name": "F1",
+            "subtype": "Type1",
+            "baseFont": "AAAAAA+SFRM1000",
+            "firstChar": 72,
+            "lastChar": 119,
+            "widths": [749.8169, 361.023, 513.7634, 777.5882, 624.8475, 916.4429, 749.8169, 777.5882, 680.3895, 777.5882, 735.9314, 555.42, 722.046, 749.8169, 749.8169, 1027.5269, 749.8169, 749.8169, 610.9619, 277.71, 499.878, 277.71, 610.9619, 777.5882, 277.71, 499.878, 555.42, 444.3333, 555.42, 444.3333, 305.481, 499.878, 555.42, 277.71, 305.481, 527.6489, 277.71, 833.1299, 555.42, 499.878, 555.42, 527.6489, 391.5714, 394.3478, 388.7941, 555.42, 527.6489, 722.046],
+            "encoding": {
+              "base": null,
+              "differences": {
+                "72": "H",
+                "100": "d",
+                "101": "e",
+                "108": "l",
+                "111": "o",
+                "114": "r",
+                "119": "w"
+              }
+            },
+            "toUnicode": false,
+            "flags": 4,
+            "fontFile": "FontFile",
+            "programLength": 21648
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "Hello world",
+      "text": "Hellé world",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Rejected",
+          "rejection": "UnsupportedCharacters",
+          "message": "The font “SFRM1000” in this PDF doesn't contain: é",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": ["é"],
+          "run": null
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": false,
+          "canUndo": false,
+          "canRedo": false,
+          "sameAs": 0,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Hello world",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "SFRM1000",
+                  "size": 24,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.79, 699.78, 191.21, 716.68]
+                },
+                {
+                  "text": "older",
+                  "object": 1,
+                  "objects": 1,
+                  "font": "SFRM1000",
+                  "size": 12,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.34, 659.89, 97.67, 668.34]
+                }
+              ],
+              "blockers": [],
+              "content": "27b574035d2ad8984704a2b874e452931e62fae2f3b22781b2b9a8505b98dfe0",
+              "fonts": [
+                {
+                  "name": "F1",
+                  "subtype": "Type1",
+                  "baseFont": "AAAAAA+SFRM1000",
+                  "firstChar": 72,
+                  "lastChar": 119,
+                  "widths": [749.8169, 361.023, 513.7634, 777.5882, 624.8475, 916.4429, 749.8169, 777.5882, 680.3895, 777.5882, 735.9314, 555.42, 722.046, 749.8169, 749.8169, 1027.5269, 749.8169, 749.8169, 610.9619, 277.71, 499.878, 277.71, 610.9619, 777.5882, 277.71, 499.878, 555.42, 444.3333, 555.42, 444.3333, 305.481, 499.878, 555.42, 277.71, 305.481, 527.6489, 277.71, 833.1299, 555.42, 499.878, 555.42, 527.6489, 391.5714, 394.3478, 388.7941, 555.42, 527.6489, 722.046],
+                  "encoding": {
+                    "base": null,
+                    "differences": {
+                      "72": "H",
+                      "100": "d",
+                      "101": "e",
+                      "108": "l",
+                      "111": "o",
+                      "114": "r",
+                      "119": "w"
+                    }
+                  },
+                  "toUnicode": false,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 21648
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

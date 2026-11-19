@@ -1,0 +1,191 @@
+{
+  "format": 1,
+  "id": "tex-new-letters-cm-super",
+  "title": "Typing letters a CM-Super subset (\\usepackage[T1]{fontenc}) lacks draws them with a complete copy of the font.",
+  "guards": "New letters in LaTeX PDFs set in CM-Super were refused; PaperKnife now adds a copy of the identical font (v0.5.0).",
+  "document": "documents/6e9924f50607.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Hello world",
+            "object": 0,
+            "objects": 1,
+            "font": "SFRM1000",
+            "size": 24,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.79, 699.78, 191.21, 716.68]
+          },
+          {
+            "text": "older",
+            "object": 1,
+            "objects": 1,
+            "font": "SFRM1000",
+            "size": 12,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.34, 659.89, 97.67, 668.34]
+          }
+        ],
+        "blockers": [],
+        "content": "27b574035d2ad8984704a2b874e452931e62fae2f3b22781b2b9a8505b98dfe0",
+        "fonts": [
+          {
+            "name": "F1",
+            "subtype": "Type1",
+            "baseFont": "AAAAAA+SFRM1000",
+            "firstChar": 72,
+            "lastChar": 119,
+            "widths": [749.8169, 361.023, 513.7634, 777.5882, 624.8475, 916.4429, 749.8169, 777.5882, 680.3895, 777.5882, 735.9314, 555.42, 722.046, 749.8169, 749.8169, 1027.5269, 749.8169, 749.8169, 610.9619, 277.71, 499.878, 277.71, 610.9619, 777.5882, 277.71, 499.878, 555.42, 444.3333, 555.42, 444.3333, 305.481, 499.878, 555.42, 277.71, 305.481, 527.6489, 277.71, 833.1299, 555.42, 499.878, 555.42, 527.6489, 391.5714, 394.3478, 388.7941, 555.42, 527.6489, 722.046],
+            "encoding": {
+              "base": null,
+              "differences": {
+                "72": "H",
+                "100": "d",
+                "101": "e",
+                "108": "l",
+                "111": "o",
+                "114": "r",
+                "119": "w"
+              }
+            },
+            "toUnicode": false,
+            "flags": 4,
+            "fontFile": "FontFile",
+            "programLength": 21648
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "Hello world",
+      "text": "Hello Kitty",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "Text updated. Verified: nothing else on this page changed.",
+          "details": ["This PDF contained only the letters it used from the font “SFRM1000”, so PaperKnife added a complete copy of that font from its own fonts for the new text. The rest of the document still uses the PDF's own font."],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": {
+            "text": "Hello Kitty",
+            "object": 0,
+            "objects": 1,
+            "font": "SFRM1000",
+            "size": 24,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.79, 695.13, 190.1, 716.68]
+          }
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Hello Kitty",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "SFRM1000",
+                  "size": 24,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.79, 695.13, 190.1, 716.68]
+                },
+                {
+                  "text": "older",
+                  "object": 1,
+                  "objects": 1,
+                  "font": "SFRM1000",
+                  "size": 12,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.34, 659.89, 97.67, 668.34]
+                }
+              ],
+              "blockers": [],
+              "content": "6f2308a6f81ba942d96b17a4009cef85df7975271e9af544ac3b794041060557",
+              "fonts": [
+                {
+                  "name": "F1",
+                  "subtype": "Type1",
+                  "baseFont": "AAAAAA+SFRM1000",
+                  "firstChar": 72,
+                  "lastChar": 119,
+                  "widths": [749.8169, 361.023, 513.7634, 777.5882, 624.8475, 916.4429, 749.8169, 777.5882, 680.3895, 777.5882, 735.9314, 555.42, 722.046, 749.8169, 749.8169, 1027.5269, 749.8169, 749.8169, 610.9619, 277.71, 499.878, 277.71, 610.9619, 777.5882, 277.71, 499.878, 555.42, 444.3333, 555.42, 444.3333, 305.481, 499.878, 555.42, 277.71, 305.481, 527.6489, 277.71, 833.1299, 555.42, 499.878, 555.42, 527.6489, 391.5714, 394.3478, 388.7941, 555.42, 527.6489, 722.046],
+                  "encoding": {
+                    "base": null,
+                    "differences": {
+                      "72": "H",
+                      "100": "d",
+                      "101": "e",
+                      "108": "l",
+                      "111": "o",
+                      "114": "r",
+                      "119": "w"
+                    }
+                  },
+                  "toUnicode": false,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 21648
+                },
+                {
+                  "name": "PKSFRM1000",
+                  "subtype": "Type1",
+                  "baseFont": "PKAAAF+SFRM1000",
+                  "firstChar": 32,
+                  "lastChar": 251,
+                  "widths": [333, 278, 500, 833, 500, 833, 778, 278, 389, 389, 500, 778, 278, 333, 278, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 278, 278, 778, 778, 778, 472, 778, 750, 708, 722, 764, 680, 653, 785, 749.8169, 361, 514, 778, 625, 916, 750, 778, 680, 778, 736, 555, 722, 750, 750, 1028, 750, 750, 611, 278, 500, 278, 611, 778, 278, 500, 555, 444, 555.42, 444.3333, 305, 500, 555, 278, 305, 528, 277.71, 833, 555, 499.878, 555, 528, 391.5714, 394, 389, 555, 528, 722.046, 528, 528, 444, 500, 278, 500, 611, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 278, 500, 639, 500, 750, 305, 444, 736, 278, 333, 555, 444, 444, 555, 555, 0, 500, 444, 444, 278, 0, 611, 500, 278, 333, 333, 555, 1166, 1166, 0, 472, 0, 500, 500, 500, 500, 500, 500, 278, 500, 0, 750, 444, 0, 500, 278, 500, 1000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 903, 0, 444, 0, 0, 0, 0, 625, 778, 1014, 444, 0, 0, 0, 0, 0, 722, 0, 0, 0, 278, 0, 0, 336, 500, 778, 500],
+                  "encoding": {
+                    "base": null,
+                    "differences": {
+                      "72": "H",
+                      "100": "d",
+                      "101": "e",
+                      "108": "l",
+                      "111": "o",
+                      "114": "r",
+                      "119": "w"
+                    }
+                  },
+                  "toUnicode": false,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 138238
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

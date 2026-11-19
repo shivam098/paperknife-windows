@@ -6,6 +6,9 @@ namespace PaperKnife.Core.Tests;
 /// <summary>Builds PDFs with PDFium at test time, so the repository never ships documents it doesn't own.</summary>
 internal static unsafe class TestPdfs
 {
+    /// <summary>DejaVu Sans, a TrueType font that may be redistributed (see Fonts/README.md); it has no U+3000.</summary>
+    public static string DejaVuSansPath => Path.Combine(AppContext.BaseDirectory, "Fonts", "DejaVuSans.ttf");
+
     /// <summary>Letter-size pages whose only text is "Page N".</summary>
     public static PdfSnapshot NumberedPages(int count)
     {
@@ -19,7 +22,7 @@ internal static unsafe class TestPdfs
                 FinishPage(page);
             }
 
-            return document.Save();
+            return Save(document);
         }
     }
 
@@ -45,7 +48,7 @@ internal static unsafe class TestPdfs
             AddStandardText(document.Handle, page, "Unrelated line", 72, 640, 12);
             FinishPage(page);
 
-            var snapshot = document.Save();
+            var snapshot = Save(document);
             FPDFFont_Close(font);
             return snapshot;
         }
@@ -74,8 +77,35 @@ internal static unsafe class TestPdfs
             }
 
             FinishPage(page);
-            return document.Save();
+            return Save(document);
         }
+    }
+
+    /// <summary>
+    /// The document as PDFium saves it, with the creation date and the file identifier it makes up
+    /// set to constants of the same length, so the same test document has the same bytes every
+    /// time (the conformance corpus stores them).
+    /// </summary>
+    private static PdfSnapshot Save(PdfDocument document)
+    {
+        var bytes = document.Save().Span.ToArray();
+        var text = System.Text.Encoding.Latin1.GetString(bytes);
+        var id = text.LastIndexOf("/ID[<", StringComparison.Ordinal);
+        for (var i = id + 5; id >= 0 && i < bytes.Length && bytes[i] != (byte)']'; i++)
+        {
+            if (Uri.IsHexDigit((char)bytes[i]))
+            {
+                bytes[i] = (byte)'0';
+            }
+        }
+
+        var date = text.IndexOf("/CreationDate(D:", StringComparison.Ordinal);
+        if (date >= 0 && text.Length >= date + 30 && text.AsSpan(date + 16, 14).IndexOfAnyExcept("0123456789") < 0)
+        {
+            "20240101000000"u8.CopyTo(bytes.AsSpan(date + 16));
+        }
+
+        return PdfSnapshot.FromBytes(bytes);
     }
 
     private static nint AddStandardText(nint document, nint page, string text, double x, double y, float size)

@@ -1,0 +1,136 @@
+{
+  "format": 1,
+  "id": "tex-lookalike-character",
+  "title": "Typing ϵ, which the character map gives TeX's math italic glyph epsilon1, draws the PDF's own glyph, not a look-alike.",
+  "guards": "The Adobe Glyph List has no epsilon1, so the copy could have drawn a look-alike such as epsilon (ε) instead of the PDF's own glyph (v0.5.0).",
+  "document": "documents/e4c289e023db.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "xy",
+            "object": 0,
+            "objects": 1,
+            "font": "CMMI10",
+            "size": 24,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.7, 695.1, 97.46, 710.61]
+          }
+        ],
+        "blockers": [],
+        "content": "1ddf6882a0ac11d2ef126f52522cdcedd97032f5a7abdb2a1cc2f5cc3c428cab",
+        "fonts": [
+          {
+            "name": "F1",
+            "subtype": "Type1",
+            "baseFont": "AAAAAA+CMMI10",
+            "firstChar": 120,
+            "lastChar": 121,
+            "widths": [571, 490],
+            "encoding": null,
+            "toUnicode": true,
+            "flags": 4,
+            "fontFile": "FontFile",
+            "programLength": 11478
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "xy",
+      "text": "ϵxy",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "Text updated. Verified: nothing else on this page changed.",
+          "details": ["This PDF contained only the letters it used from the font “CMMI10”, so PaperKnife added a complete copy of that font from its own fonts for the new text. The rest of the document still uses the PDF's own font."],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": {
+            "text": "ϵxy",
+            "object": 0,
+            "objects": 1,
+            "font": "CMMI10",
+            "size": 24,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [73.13, 695.1, 107.18, 710.61]
+          }
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "ϵxy",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "CMMI10",
+                  "size": 24,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [73.13, 695.1, 107.18, 710.61]
+                }
+              ],
+              "blockers": [],
+              "content": "fdf92d8a730b22034548bc3b2fbfe4bf47b34e53f2c5459abed005ec0914dac0",
+              "fonts": [
+                {
+                  "name": "F1",
+                  "subtype": "Type1",
+                  "baseFont": "AAAAAA+CMMI10",
+                  "firstChar": 120,
+                  "lastChar": 121,
+                  "widths": [571, 490],
+                  "encoding": null,
+                  "toUnicode": true,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 11478
+                },
+                {
+                  "name": "PKCMMI10",
+                  "subtype": "Type1",
+                  "baseFont": "PKAAAF+CMMI10",
+                  "firstChar": 0,
+                  "lastChar": 196,
+                  "widths": [615, 833, 762, 694, 742, 831, 779, 583, 666, 612, 772, 639, 565, 517, 444, 405, 437, 496, 469, 353, 576, 583, 602, 493, 437, 570, 517, 571, 437, 540, 595, 625, 651, 622, 466, 591, 828, 517, 362, 654, 1000, 1000, 1000, 1000, 277, 277, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 277, 277, 777, 500, 777, 500, 530, 750, 758, 714, 827, 738, 643, 786, 831, 439, 554, 849, 680, 970, 803, 762, 642, 790, 759, 613, 584, 682, 583, 944, 828, 580, 682, 388, 388, 388, 1000, 1000, 416, 528, 429, 432, 520, 465, 489, 476, 576, 344, 411, 520, 298, 878, 600, 484, 503, 446, 451, 468, 361, 572, 484, 715, 571, 490, 465, 322, 384, 636, 500, 277, 651, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 333, 615, 833, 762, 694, 742, 831, 779, 583, 666, 612, 0, 0, 772, 639, 565, 517, 444, 405, 437, 496, 469, 353, 576, 583, 602, 493, 437, 570, 517, 571, 437, 540, 595, 625, 651, 277],
+                  "encoding": null,
+                  "toUnicode": true,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 36279
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

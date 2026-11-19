@@ -1,0 +1,200 @@
+{
+  "format": 1,
+  "id": "content-delete-keeps-invisible-text-after",
+  "title": "Deleting a line keeps the invisible text shown right after it exactly where it was.",
+  "guards": "Deleting text must keep invisible text, such as a scanned page's searchable layer, exactly where it was (v0.4.0).",
+  "document": "documents/edfa43ef4044.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Visible",
+            "object": 0,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.05, 599.87, 106.85, 608.59]
+          },
+          {
+            "text": "hidden words",
+            "object": 1,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": true,
+            "bounds": [108.13, 599.87, 178.24, 608.59]
+          }
+        ],
+        "blockers": [],
+        "content": "9d4669f3c27d5fd4bb17a7e1dce23a5eb89d5bcf1f236c9934d5669843973a6b",
+        "fonts": [
+          {
+            "name": "F1",
+            "subtype": "Type1",
+            "baseFont": "Helvetica",
+            "firstChar": null,
+            "lastChar": null,
+            "widths": null,
+            "encoding": "WinAnsiEncoding",
+            "toUnicode": false,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          },
+          {
+            "name": "F2",
+            "subtype": "Type1",
+            "baseFont": "Helvetica",
+            "firstChar": 65,
+            "lastChar": 68,
+            "widths": [667, 1000, 722, 722],
+            "encoding": {
+              "base": "WinAnsiEncoding",
+              "differences": {
+                "66": "A"
+              }
+            },
+            "toUnicode": false,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          },
+          {
+            "name": "F3",
+            "subtype": "Type3",
+            "baseFont": null,
+            "firstChar": 97,
+            "lastChar": 99,
+            "widths": [500, 600, 700],
+            "encoding": {
+              "base": null,
+              "differences": {
+                "97": "a",
+                "98": "b",
+                "99": "c"
+              }
+            },
+            "toUnicode": true,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "Visible",
+      "text": "",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "Text deleted. Verified: nothing else on this page changed.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": null
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "hidden words",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 12,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": true,
+                  "bounds": [108.13, 599.87, 178.24, 608.59]
+                }
+              ],
+              "blockers": [],
+              "content": "0f58ac4db6a5186a4c706bfd78a897f3a02d6d005703c853acb258bc44e7682b",
+              "fonts": [
+                {
+                  "name": "F1",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": null,
+                  "lastChar": null,
+                  "widths": null,
+                  "encoding": "WinAnsiEncoding",
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                },
+                {
+                  "name": "F2",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": 65,
+                  "lastChar": 68,
+                  "widths": [667, 1000, 722, 722],
+                  "encoding": {
+                    "base": "WinAnsiEncoding",
+                    "differences": {
+                      "66": "A"
+                    }
+                  },
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                },
+                {
+                  "name": "F3",
+                  "subtype": "Type3",
+                  "baseFont": null,
+                  "firstChar": 97,
+                  "lastChar": 99,
+                  "widths": [500, 600, 700],
+                  "encoding": {
+                    "base": null,
+                    "differences": {
+                      "97": "a",
+                      "98": "b",
+                      "99": "c"
+                    }
+                  },
+                  "toUnicode": true,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

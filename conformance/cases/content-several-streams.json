@@ -1,0 +1,221 @@
+{
+  "format": 1,
+  "id": "content-several-streams",
+  "title": "Editing a line on a page drawn by two content streams applies, and the line drawn by the other stream doesn't move.",
+  "guards": "Pages drawn by several content streams must be edited where the text is, keeping the other streams as they are (v0.2.0).",
+  "document": "documents/b7c8a899511d.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Hello World",
+            "object": 0,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 24,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [73.92, 699.74, 194.28, 717.18]
+          },
+          {
+            "text": "This line must not move",
+            "object": 1,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.28, 659.87, 198.22, 668.59]
+          }
+        ],
+        "blockers": [],
+        "content": "4be004932b7b089db8047218a42ecc226c0694b9840101ef48c346173d51c052",
+        "fonts": [
+          {
+            "name": "F1",
+            "subtype": "Type1",
+            "baseFont": "Helvetica",
+            "firstChar": null,
+            "lastChar": null,
+            "widths": null,
+            "encoding": "WinAnsiEncoding",
+            "toUnicode": false,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          },
+          {
+            "name": "F2",
+            "subtype": "Type1",
+            "baseFont": "Helvetica",
+            "firstChar": 65,
+            "lastChar": 68,
+            "widths": [667, 1000, 722, 722],
+            "encoding": {
+              "base": "WinAnsiEncoding",
+              "differences": {
+                "66": "A"
+              }
+            },
+            "toUnicode": false,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          },
+          {
+            "name": "F3",
+            "subtype": "Type3",
+            "baseFont": null,
+            "firstChar": 97,
+            "lastChar": 99,
+            "widths": [500, 600, 700],
+            "encoding": {
+              "base": null,
+              "differences": {
+                "97": "a",
+                "98": "b",
+                "99": "c"
+              }
+            },
+            "toUnicode": true,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "Hello World",
+      "text": "Hello PaperKnife",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "Text updated. Verified: nothing else on this page changed.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": {
+            "text": "Hello PaperKnife",
+            "object": 0,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 24,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [73.92, 695.25, 251.09, 717.47]
+          }
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Hello PaperKnife",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 24,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [73.92, 695.25, 251.09, 717.47]
+                },
+                {
+                  "text": "This line must not move",
+                  "object": 1,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 12,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.28, 659.87, 198.22, 668.59]
+                }
+              ],
+              "blockers": [],
+              "content": "7e01561dc354a26c3f13ec2a2b977c81b2e7521103da9fe56a61fde397a3dd11",
+              "fonts": [
+                {
+                  "name": "F1",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": null,
+                  "lastChar": null,
+                  "widths": null,
+                  "encoding": "WinAnsiEncoding",
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                },
+                {
+                  "name": "F2",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": 65,
+                  "lastChar": 68,
+                  "widths": [667, 1000, 722, 722],
+                  "encoding": {
+                    "base": "WinAnsiEncoding",
+                    "differences": {
+                      "66": "A"
+                    }
+                  },
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                },
+                {
+                  "name": "F3",
+                  "subtype": "Type3",
+                  "baseFont": null,
+                  "firstChar": 97,
+                  "lastChar": 99,
+                  "widths": [500, 600, 700],
+                  "encoding": {
+                    "base": null,
+                    "differences": {
+                      "97": "a",
+                      "98": "b",
+                      "99": "c"
+                    }
+                  },
+                  "toUnicode": true,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

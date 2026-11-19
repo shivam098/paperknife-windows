@@ -521,7 +521,7 @@ public sealed class TexFontTests
     }
 
     /// <summary>A ToUnicode CMap of 50,000 two-byte codes, which a simple font never shows: it only takes time to read.</summary>
-    private static string LargeCharacterMap()
+    internal static string LargeCharacterMap()
     {
         var map = new StringBuilder("/CIDInit /ProcSet findresource begin 12 dict begin begincmap /CMapName /Large def /CMapType 2 def\n");
         for (var block = 0; block < 500; block++)

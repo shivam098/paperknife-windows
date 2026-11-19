@@ -1,0 +1,5 @@
+BT /F1 24 Tf 72 700 Td (Hello World) Tj ET
+BT /F1 12 Tf 72 660 Td (This line must not move) Tj ET
+0.86 0.16 0.16 rg 72 500 200 100 re f
+BT /F1 12 Tf 3 Tr 5 Tc 72 300 Td (hidden OCR words) Tj ET
+ 

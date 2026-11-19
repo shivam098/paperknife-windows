@@ -1,0 +1,145 @@
+{
+  "format": 1,
+  "id": "tex-shared-subset-own",
+  "title": "The edit of tex-shared-subset in a font that describes its whole subset, for comparing widths.",
+  "guards": "Letters added to a font must get their own widths, whether or not the font shares its subset (v0.5.0).",
+  "document": "documents/0e8562dadbca.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Ho",
+            "object": 0,
+            "objects": 1,
+            "font": "LMRoman10-Regular",
+            "size": 24,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.79, 699.76, 101.3, 716.39]
+          }
+        ],
+        "blockers": [],
+        "content": "f7b64c436f09e8953cd903c87ed65779e23c41dad131d8ab458412e1cc212b0c",
+        "fonts": [
+          {
+            "name": "F1",
+            "subtype": "Type1",
+            "baseFont": "AAAAAA+LMRoman10-Regular",
+            "firstChar": 72,
+            "lastChar": 119,
+            "widths": [750, 361.1111, 513.8889, 777.7778, 625, 916.6667, 750, 777.7778, 680.5556, 777.7778, 736.1111, 555.5556, 722.2222, 750, 750, 1027.7778, 750, 750, 611.1111, 277.7778, 500, 277.7778, 555.5556, 750, 500, 500, 555.5556, 444.4444, 555.5556, 444.4444, 305.5556, 500, 555.5556, 277.7778, 305.5556, 527.7778, 277.7778, 833.3333, 555.5556, 500, 555.5556, 527.7778, 391.6667, 394.4444, 388.8889, 555.5556, 527.7778, 722.2222],
+            "encoding": {
+              "base": null,
+              "differences": {
+                "72": "H",
+                "100": "d",
+                "101": "e",
+                "108": "l",
+                "111": "o",
+                "114": "r",
+                "119": "w"
+              }
+            },
+            "toUnicode": false,
+            "flags": 4,
+            "fontFile": "FontFile",
+            "programLength": 53973
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "Ho",
+      "text": "Hold",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "Text updated. Verified: nothing else on this page changed.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": {
+            "text": "Hold",
+            "object": 0,
+            "objects": 1,
+            "font": "LMRoman10-Regular",
+            "size": 24,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.79, 699.76, 121.3, 716.66]
+          }
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Hold",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "LMRoman10-Regular",
+                  "size": 24,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.79, 699.76, 121.3, 716.66]
+                }
+              ],
+              "blockers": [],
+              "content": "0b2a63923b71424938494d843e9548704b0a9ea643f274bdf074b9db1782949e",
+              "fonts": [
+                {
+                  "name": "F1",
+                  "subtype": "Type1",
+                  "baseFont": "AAAAAA+LMRoman10-Regular",
+                  "firstChar": 72,
+                  "lastChar": 119,
+                  "widths": [750, 361.1111, 513.8889, 777.7778, 625, 916.6667, 750, 777.7778, 680.5556, 777.7778, 736.1111, 555.5556, 722.2222, 750, 750, 1027.7778, 750, 750, 611.1111, 277.7778, 500, 277.7778, 555.5556, 750, 500, 500, 555.5556, 444.4444, 555.5556, 444.4444, 305.5556, 500, 555.5556, 277.7778, 305.5556, 527.7778, 277.7778, 833.3333, 555.5556, 500, 555.5556, 527.7778, 391.6667, 394.4444, 388.8889, 555.5556, 527.7778, 722.2222],
+                  "encoding": {
+                    "base": null,
+                    "differences": {
+                      "72": "H",
+                      "100": "d",
+                      "101": "e",
+                      "108": "l",
+                      "111": "o",
+                      "114": "r",
+                      "119": "w"
+                    }
+                  },
+                  "toUnicode": false,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 53973
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

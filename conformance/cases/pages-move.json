@@ -1,0 +1,247 @@
+{
+  "format": 1,
+  "id": "pages-move",
+  "title": "Moving the third of three pages to the front gives pages 3, 1, 2.",
+  "guards": "Page commands must put pages exactly where asked, keeping every page's text (v0.1.0).",
+  "document": "documents/e6d8688f7a08.pdf",
+  "initial": {
+    "pageCount": 3,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Page 1",
+            "object": 0,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 24,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [73.85, 694.98, 143.66, 717.26]
+          }
+        ],
+        "blockers": [],
+        "content": "7aedcc514f1ea2c13bef5aab703cbf8ecfadc097872ef38c81f905bae058b7c8",
+        "fonts": [
+          {
+            "name": "FXF1",
+            "subtype": "Type1",
+            "baseFont": "Helvetica",
+            "firstChar": null,
+            "lastChar": null,
+            "widths": null,
+            "encoding": "WinAnsiEncoding",
+            "toUnicode": false,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          }
+        ]
+      },
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Page 2",
+            "object": 0,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 24,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [73.85, 694.98, 146.78, 717.26]
+          }
+        ],
+        "blockers": [],
+        "content": "289c850269badea65609fe6668bd6f4ea784cf085c393c29ff1ce30b7db2deee",
+        "fonts": [
+          {
+            "name": "FXF1",
+            "subtype": "Type1",
+            "baseFont": "Helvetica",
+            "firstChar": null,
+            "lastChar": null,
+            "widths": null,
+            "encoding": "WinAnsiEncoding",
+            "toUnicode": false,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          }
+        ]
+      },
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Page 3",
+            "object": 0,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 24,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [73.85, 694.98, 146.98, 717.26]
+          }
+        ],
+        "blockers": [],
+        "content": "1ee8d2e13ea47b0f8d91a210ee1f357827c115079d09e0ec1b884fc7bfecb4f3",
+        "fonts": [
+          {
+            "name": "FXF1",
+            "subtype": "Type1",
+            "baseFont": "Helvetica",
+            "firstChar": null,
+            "lastChar": null,
+            "widths": null,
+            "encoding": "WinAnsiEncoding",
+            "toUnicode": false,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "movePage",
+      "from": 2,
+      "to": 0,
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "Page 3 moved to position 1.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": null
+        },
+        "state": {
+          "pageCount": 3,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": false,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Page 3",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 24,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [73.85, 694.98, 146.98, 717.26]
+                }
+              ],
+              "blockers": [],
+              "content": "1ee8d2e13ea47b0f8d91a210ee1f357827c115079d09e0ec1b884fc7bfecb4f3",
+              "fonts": [
+                {
+                  "name": "FXF1",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": null,
+                  "lastChar": null,
+                  "widths": null,
+                  "encoding": "WinAnsiEncoding",
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                }
+              ]
+            },
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Page 1",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 24,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [73.85, 694.98, 143.66, 717.26]
+                }
+              ],
+              "blockers": [],
+              "content": "7aedcc514f1ea2c13bef5aab703cbf8ecfadc097872ef38c81f905bae058b7c8",
+              "fonts": [
+                {
+                  "name": "FXF1",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": null,
+                  "lastChar": null,
+                  "widths": null,
+                  "encoding": "WinAnsiEncoding",
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                }
+              ]
+            },
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Page 2",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 24,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [73.85, 694.98, 146.78, 717.26]
+                }
+              ],
+              "blockers": [],
+              "content": "289c850269badea65609fe6668bd6f4ea784cf085c393c29ff1ce30b7db2deee",
+              "fonts": [
+                {
+                  "name": "FXF1",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": null,
+                  "lastChar": null,
+                  "widths": null,
+                  "encoding": "WinAnsiEncoding",
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

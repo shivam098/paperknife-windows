@@ -1,0 +1,191 @@
+{
+  "format": 1,
+  "id": "tex-accented-letter-latin-modern",
+  "title": "Typing é, which the PDF never uses, in Latin Modern applies: the font's own encoding has é where T1 has it.",
+  "guards": "Letters the PDF's /Differences don't name take their codes from the font's own encoding (v0.5.0).",
+  "document": "documents/1fffecbffcc1.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Hello world",
+            "object": 0,
+            "objects": 1,
+            "font": "LMRoman10-Regular",
+            "size": 24,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.79, 699.76, 191.28, 716.66]
+          },
+          {
+            "text": "older",
+            "object": 1,
+            "objects": 1,
+            "font": "LMRoman10-Regular",
+            "size": 12,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.34, 659.88, 97.68, 668.33]
+          }
+        ],
+        "blockers": [],
+        "content": "27b574035d2ad8984704a2b874e452931e62fae2f3b22781b2b9a8505b98dfe0",
+        "fonts": [
+          {
+            "name": "F1",
+            "subtype": "Type1",
+            "baseFont": "AAAAAA+LMRoman10-Regular",
+            "firstChar": 72,
+            "lastChar": 119,
+            "widths": [750, 361.1111, 513.8889, 777.7778, 625, 916.6667, 750, 777.7778, 680.5556, 777.7778, 736.1111, 555.5556, 722.2222, 750, 750, 1027.7778, 750, 750, 611.1111, 277.7778, 500, 277.7778, 555.5556, 750, 500, 500, 555.5556, 444.4444, 555.5556, 444.4444, 305.5556, 500, 555.5556, 277.7778, 305.5556, 527.7778, 277.7778, 833.3333, 555.5556, 500, 555.5556, 527.7778, 391.6667, 394.4444, 388.8889, 555.5556, 527.7778, 722.2222],
+            "encoding": {
+              "base": null,
+              "differences": {
+                "72": "H",
+                "100": "d",
+                "101": "e",
+                "108": "l",
+                "111": "o",
+                "114": "r",
+                "119": "w"
+              }
+            },
+            "toUnicode": false,
+            "flags": 4,
+            "fontFile": "FontFile",
+            "programLength": 53973
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "Hello world",
+      "text": "Hellé world",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "Text updated. Verified: nothing else on this page changed.",
+          "details": ["This PDF contained only the letters it used from the font “LMRoman10-Regular”, so PaperKnife added a complete copy of that font from its own fonts for the new text. The rest of the document still uses the PDF's own font."],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": {
+            "text": "Hellé world",
+            "object": 0,
+            "objects": 1,
+            "font": "LMRoman10-Regular",
+            "size": 24,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.79, 699.76, 189.94, 716.75]
+          }
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Hellé world",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "LMRoman10-Regular",
+                  "size": 24,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.79, 699.76, 189.94, 716.75]
+                },
+                {
+                  "text": "older",
+                  "object": 1,
+                  "objects": 1,
+                  "font": "LMRoman10-Regular",
+                  "size": 12,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.34, 659.88, 97.68, 668.33]
+                }
+              ],
+              "blockers": [],
+              "content": "e263fc737362272eb81b30bd6472b1a146217dfbeb4eb9169246944a025105e1",
+              "fonts": [
+                {
+                  "name": "F1",
+                  "subtype": "Type1",
+                  "baseFont": "AAAAAA+LMRoman10-Regular",
+                  "firstChar": 72,
+                  "lastChar": 119,
+                  "widths": [750, 361.1111, 513.8889, 777.7778, 625, 916.6667, 750, 777.7778, 680.5556, 777.7778, 736.1111, 555.5556, 722.2222, 750, 750, 1027.7778, 750, 750, 611.1111, 277.7778, 500, 277.7778, 555.5556, 750, 500, 500, 555.5556, 444.4444, 555.5556, 444.4444, 305.5556, 500, 555.5556, 277.7778, 305.5556, 527.7778, 277.7778, 833.3333, 555.5556, 500, 555.5556, 527.7778, 391.6667, 394.4444, 388.8889, 555.5556, 527.7778, 722.2222],
+                  "encoding": {
+                    "base": null,
+                    "differences": {
+                      "72": "H",
+                      "100": "d",
+                      "101": "e",
+                      "108": "l",
+                      "111": "o",
+                      "114": "r",
+                      "119": "w"
+                    }
+                  },
+                  "toUnicode": false,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 53973
+                },
+                {
+                  "name": "PKLMRoman10-Regular",
+                  "subtype": "Type1",
+                  "baseFont": "PKAAAF+LMRoman10-Regular",
+                  "firstChar": 32,
+                  "lastChar": 255,
+                  "widths": [333, 278, 374, 833, 500, 833, 778, 278, 389, 389, 500, 778, 278, 333, 278, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 278, 278, 778, 778, 778, 472, 778, 750, 708, 722, 764, 681, 653, 785, 750, 361, 514, 778, 625, 917, 750, 778, 681, 778, 736, 556, 722, 750, 750, 1028, 750, 750, 611, 278, 500, 278, 556, 750, 500, 500, 556, 444, 555.5556, 444.4444, 306, 500, 556, 278, 306, 528, 277.7778, 833, 556, 500, 556, 528, 391.6667, 394, 389, 556, 528, 722.2222, 528, 528, 444, 500, 278, 500, 556, 0, 627, 556, 556, 750, 472, 670, 444, 444, 681, 1140, 556, 556, 556, 1014, 611, 611, 750, 278, 278, 472, 472, 778, 500, 1000, 444, 778, 394, 394, 394, 778, 444, 444, 500, 278, 472, 625, 778, 750, 778, 484, 750, 683, 903, 556, 750, 778, 683, 611, 375, 778, 0, 336, 0, 556, 611, 778, 556, 500, 722, 556, 556, 722, 389, 444, 750, 750, 750, 750, 750, 750, 722, 722, 681, 681, 681, 681, 361, 361, 361, 361, 764, 750, 778, 778, 778, 778, 778, 778, 778, 750, 750, 750, 750, 750, 361, 500, 500, 500, 500, 500, 500, 500, 444, 444, 444, 444, 444, 444, 278, 278, 278, 278, 500, 556, 500, 500, 500, 500, 500, 778, 500, 556, 556, 556, 556, 528, 278, 528],
+                  "encoding": {
+                    "base": null,
+                    "differences": {
+                      "72": "H",
+                      "100": "d",
+                      "101": "e",
+                      "108": "l",
+                      "111": "o",
+                      "114": "r",
+                      "119": "w"
+                    }
+                  },
+                  "toUnicode": false,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 119215
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

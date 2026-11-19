@@ -11,8 +11,9 @@ Thank you for helping. PaperKnife's value comes from trust, so a few rules apply
    edit pass; reject the edit and explain why instead.
 3. **No faked edits.** Don't cover text with shapes, swap fonts silently or call covering
    "redaction".
-4. **No documents we don't own.** Tests generate their PDFs. Don't commit third-party PDFs,
-   fonts or users' files.
+4. **No documents we don't own.** Tests generate their PDFs, and the conformance corpus stores
+   only PDFs they generated. Don't commit third-party PDFs or users' files, or fonts whose
+   license doesn't allow it (list any you add in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
 5. **Keep the engine UI-free.** `PaperKnife.Core` must not reference WinUI.
 
 ## Getting started
@@ -30,6 +31,11 @@ Warnings are treated as errors.
 
 - Describe the user-visible change and how you tested it.
 - Add tests for new behavior, including the cases that must be refused.
+- A test whose scenario is a document session needs a case in the
+  [conformance corpus](conformance/README.md), which PaperKnife for Mac and Android must also
+  pass: add it in `tests/PaperKnife.Core.Tests/Conformance/CorpusCases*.cs` and regenerate the
+  corpus. A changed expectation in `conformance/cases/` changes what the other apps must do, so
+  say why in the pull request.
 - If you change what PaperKnife can or can't edit, update [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
   and the README.
 - If you add a dependency, add it to [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and make

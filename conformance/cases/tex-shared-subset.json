@@ -1,0 +1,154 @@
+{
+  "format": 1,
+  "id": "tex-shared-subset",
+  "title": "Typing letters in a font that describes only H and o of a subset it shares with another font: they get the widths they have in tex-shared-subset-own.",
+  "guards": "pdfTeX embeds one subset for the fonts of a program, and the letters this font doesn't describe got its width of 0 (v0.5.0).",
+  "document": "documents/a9f31bcf6b0d.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Ho",
+            "object": 0,
+            "objects": 1,
+            "font": "LMRoman10-Regular",
+            "size": 24,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.79, 699.76, 101.3, 716.39]
+          }
+        ],
+        "blockers": [],
+        "content": "f7b64c436f09e8953cd903c87ed65779e23c41dad131d8ab458412e1cc212b0c",
+        "fonts": [
+          {
+            "name": "F1",
+            "subtype": "Type1",
+            "baseFont": "AAAAAA+LMRoman10-Regular",
+            "firstChar": 72,
+            "lastChar": 111,
+            "widths": [750, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 500],
+            "encoding": {
+              "base": null,
+              "differences": {
+                "72": "H",
+                "111": "o"
+              }
+            },
+            "toUnicode": false,
+            "flags": 4,
+            "fontFile": "FontFile",
+            "programLength": 53973
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "Ho",
+      "text": "Hold",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "Text updated. Verified: nothing else on this page changed.",
+          "details": ["This PDF contained only the letters it used from the font “LMRoman10-Regular”, so PaperKnife added a complete copy of that font from its own fonts for the new text. The rest of the document still uses the PDF's own font."],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": {
+            "text": "Hold",
+            "object": 0,
+            "objects": 1,
+            "font": "LMRoman10-Regular",
+            "size": 24,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.79, 699.76, 121.32, 716.66]
+          }
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Hold",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "LMRoman10-Regular",
+                  "size": 24,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.79, 699.76, 121.32, 716.66]
+                }
+              ],
+              "blockers": [],
+              "content": "528850d3a6464ee2445862e4833d960af75e07df92f5823bda6338646de7397c",
+              "fonts": [
+                {
+                  "name": "F1",
+                  "subtype": "Type1",
+                  "baseFont": "AAAAAA+LMRoman10-Regular",
+                  "firstChar": 72,
+                  "lastChar": 111,
+                  "widths": [750, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 500],
+                  "encoding": {
+                    "base": null,
+                    "differences": {
+                      "72": "H",
+                      "111": "o"
+                    }
+                  },
+                  "toUnicode": false,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 53973
+                },
+                {
+                  "name": "PKLMRoman10-Regular",
+                  "subtype": "Type1",
+                  "baseFont": "PKAAAF+LMRoman10-Regular",
+                  "firstChar": 32,
+                  "lastChar": 255,
+                  "widths": [333, 278, 374, 833, 500, 833, 778, 278, 389, 389, 500, 778, 278, 333, 278, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 278, 278, 778, 778, 778, 472, 778, 750, 708, 722, 764, 681, 653, 785, 750, 361, 514, 778, 625, 917, 750, 778, 681, 778, 736, 556, 722, 750, 750, 1028, 750, 750, 611, 278, 500, 278, 556, 750, 500, 500, 556, 444, 556, 444, 306, 500, 556, 278, 306, 528, 278, 833, 556, 500, 556, 528, 392, 394, 389, 556, 528, 722, 528, 528, 444, 500, 278, 500, 556, 0, 627, 556, 556, 750, 472, 670, 444, 444, 681, 1140, 556, 556, 556, 1014, 611, 611, 750, 278, 278, 472, 472, 778, 500, 1000, 444, 778, 394, 394, 394, 778, 444, 444, 500, 278, 472, 625, 778, 750, 778, 484, 750, 683, 903, 556, 750, 778, 683, 611, 375, 778, 0, 336, 0, 556, 611, 778, 556, 500, 722, 556, 556, 722, 389, 444, 750, 750, 750, 750, 750, 750, 722, 722, 681, 681, 681, 681, 361, 361, 361, 361, 764, 750, 778, 778, 778, 778, 778, 778, 778, 750, 750, 750, 750, 750, 361, 500, 500, 500, 500, 500, 500, 500, 444, 444, 444, 444, 444, 444, 278, 278, 278, 278, 500, 556, 500, 500, 500, 500, 500, 778, 500, 556, 556, 556, 556, 528, 278, 528],
+                  "encoding": {
+                    "base": null,
+                    "differences": {
+                      "72": "H",
+                      "111": "o"
+                    }
+                  },
+                  "toUnicode": false,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 119215
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

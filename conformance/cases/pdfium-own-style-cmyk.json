@@ -1,0 +1,189 @@
+{
+  "format": 1,
+  "id": "pdfium-own-style-cmyk",
+  "title": "Through PDFium's page rewrite, editing text in a print (CMYK) color is refused.",
+  "guards": "PDFium's content generator writes only RGB and gray colors, so the edited text would change color (refused since v0.1.0).",
+  "document": "documents/45c6cf24bcf0.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Hello World",
+            "object": 0,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 24,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [73.92, 699.74, 194.28, 717.18]
+          }
+        ],
+        "blockers": [],
+        "content": "05f76dadeff962c045c8acba3589f6c0244d59220cc81465fa7ba568249d3dd5",
+        "fonts": [
+          {
+            "name": "F1",
+            "subtype": "Type1",
+            "baseFont": "Helvetica",
+            "firstChar": null,
+            "lastChar": null,
+            "widths": null,
+            "encoding": "WinAnsiEncoding",
+            "toUnicode": false,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          },
+          {
+            "name": "F2",
+            "subtype": "Type1",
+            "baseFont": "Helvetica",
+            "firstChar": 65,
+            "lastChar": 68,
+            "widths": [667, 1000, 722, 722],
+            "encoding": {
+              "base": "WinAnsiEncoding",
+              "differences": {
+                "66": "A"
+              }
+            },
+            "toUnicode": false,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          },
+          {
+            "name": "F3",
+            "subtype": "Type3",
+            "baseFont": null,
+            "firstChar": 97,
+            "lastChar": 99,
+            "widths": [500, 600, 700],
+            "encoding": {
+              "base": null,
+              "differences": {
+                "97": "a",
+                "98": "b",
+                "99": "c"
+              }
+            },
+            "toUnicode": true,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "Hello World",
+      "text": "Hello PaperKnife",
+      "contentEditing": false,
+      "expect": {
+        "result": {
+          "status": "Rejected",
+          "rejection": "PageNotEditable",
+          "message": "PaperKnife can't rewrite this page without changing how it looks (for example letter spacing, print colors or small embedded images), so its text can't be edited yet.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": null
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": false,
+          "canUndo": false,
+          "canRedo": false,
+          "sameAs": 0,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Hello World",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 24,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [73.92, 699.74, 194.28, 717.18]
+                }
+              ],
+              "blockers": [],
+              "content": "05f76dadeff962c045c8acba3589f6c0244d59220cc81465fa7ba568249d3dd5",
+              "fonts": [
+                {
+                  "name": "F1",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": null,
+                  "lastChar": null,
+                  "widths": null,
+                  "encoding": "WinAnsiEncoding",
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                },
+                {
+                  "name": "F2",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": 65,
+                  "lastChar": 68,
+                  "widths": [667, 1000, 722, 722],
+                  "encoding": {
+                    "base": "WinAnsiEncoding",
+                    "differences": {
+                      "66": "A"
+                    }
+                  },
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                },
+                {
+                  "name": "F3",
+                  "subtype": "Type3",
+                  "baseFont": null,
+                  "firstChar": 97,
+                  "lastChar": 99,
+                  "widths": [500, 600, 700],
+                  "encoding": {
+                    "base": null,
+                    "differences": {
+                      "97": "a",
+                      "98": "b",
+                      "99": "c"
+                    }
+                  },
+                  "toUnicode": true,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

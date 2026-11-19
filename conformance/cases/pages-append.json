@@ -1,0 +1,215 @@
+{
+  "format": 1,
+  "id": "pages-append",
+  "title": "Appending a one-page document to a two-page one adds its page at the end.",
+  "guards": "Pages added from another PDF must come after the existing pages, in order (v0.1.0).",
+  "document": "documents/55142f50dbbc.pdf",
+  "attachments": {
+    "other": "documents/32a4377b16a1.pdf"
+  },
+  "initial": {
+    "pageCount": 2,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Page 1",
+            "object": 0,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 24,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [73.85, 694.98, 143.66, 717.26]
+          }
+        ],
+        "blockers": [],
+        "content": "7aedcc514f1ea2c13bef5aab703cbf8ecfadc097872ef38c81f905bae058b7c8",
+        "fonts": [
+          {
+            "name": "FXF1",
+            "subtype": "Type1",
+            "baseFont": "Helvetica",
+            "firstChar": null,
+            "lastChar": null,
+            "widths": null,
+            "encoding": "WinAnsiEncoding",
+            "toUnicode": false,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          }
+        ]
+      },
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Page 2",
+            "object": 0,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 24,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [73.85, 694.98, 146.78, 717.26]
+          }
+        ],
+        "blockers": [],
+        "content": "289c850269badea65609fe6668bd6f4ea784cf085c393c29ff1ce30b7db2deee",
+        "fonts": [
+          {
+            "name": "FXF1",
+            "subtype": "Type1",
+            "baseFont": "Helvetica",
+            "firstChar": null,
+            "lastChar": null,
+            "widths": null,
+            "encoding": "WinAnsiEncoding",
+            "toUnicode": false,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "appendDocument",
+      "document": "other",
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "1 page added.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": null
+        },
+        "state": {
+          "pageCount": 3,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": false,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Page 1",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 24,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [73.85, 694.98, 143.66, 717.26]
+                }
+              ],
+              "blockers": [],
+              "content": "7aedcc514f1ea2c13bef5aab703cbf8ecfadc097872ef38c81f905bae058b7c8",
+              "fonts": [
+                {
+                  "name": "FXF1",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": null,
+                  "lastChar": null,
+                  "widths": null,
+                  "encoding": "WinAnsiEncoding",
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                }
+              ]
+            },
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Page 2",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 24,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [73.85, 694.98, 146.78, 717.26]
+                }
+              ],
+              "blockers": [],
+              "content": "289c850269badea65609fe6668bd6f4ea784cf085c393c29ff1ce30b7db2deee",
+              "fonts": [
+                {
+                  "name": "FXF1",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": null,
+                  "lastChar": null,
+                  "widths": null,
+                  "encoding": "WinAnsiEncoding",
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                }
+              ]
+            },
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Page 1",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 24,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [73.85, 694.98, 143.66, 717.26]
+                }
+              ],
+              "blockers": [],
+              "content": "7aedcc514f1ea2c13bef5aab703cbf8ecfadc097872ef38c81f905bae058b7c8",
+              "fonts": [
+                {
+                  "name": "FXF1",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": null,
+                  "lastChar": null,
+                  "widths": null,
+                  "encoding": "WinAnsiEncoding",
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

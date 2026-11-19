@@ -13,7 +13,7 @@ flowchart LR
 |---|---|
 | `PaperKnife.Core` | Everything about PDFs. Targets `net10.0`, has no UI dependencies, and keeps all native calls internal. |
 | `PaperKnife.App` | WinUI 3 (the WinUI component of Windows App SDK 2.6), unpackaged and self-contained, so the same app folder runs from a build, a ZIP or the installer. Talks only to `DocumentSession`. |
-| `PaperKnife.Core.Tests` | Tests that build their PDFs at run time, either through PDFium or as hand-written PDF syntax. |
+| `PaperKnife.Core.Tests` | Tests that build their PDFs at run time, either through PDFium or as hand-written PDF syntax, and the [conformance corpus](../conformance/README.md) PaperKnife's other apps check themselves against. |
 
 ## The PDF engine
 
@@ -473,6 +473,14 @@ low-privilege process is on the roadmap.
 - Memory tests, which run on their own, page through documents whose fonts have large character
   maps: shared by every page's font, one copy must stay in memory; one per page, only those of
   the last pages viewed.
+- The [conformance corpus](../conformance/README.md) (`conformance/`) stores, for every test
+  whose scenario is a document session, the document, the steps and what this app observes:
+  each result and message, the undo state, whether the file was appended to or restored, and
+  every page's runs, blockers, fonts and a hash of its decoded content. PaperKnife for Mac and
+  Android run the same cases and must observe the same thing, so a shortcoming fixed here can't
+  come back there. `ConformanceTests` fail when the corpus is out of date, and replay the stored
+  cases against this engine. Where the other tests embed Arial, the corpus embeds DejaVu Sans
+  (in `tests/PaperKnife.Core.Tests/Fonts`), which may be redistributed.
 - CI runs on Windows x64 and Windows on Arm.
 
 ## Decisions

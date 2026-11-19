@@ -1,0 +1,254 @@
+{
+  "format": 1,
+  "id": "tex-new-letters-cmr10",
+  "title": "Typing letters a LaTeX PDF's Computer Modern subset lacks, on two lines.",
+  "guards": "LaTeX PDFs contain only the letters they use, so new letters were refused (v0.3.0); the second edit reuses the font copy the first added.",
+  "document": "documents/0f4c2884386f.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Hello world",
+            "object": 0,
+            "objects": 1,
+            "font": "CMR10",
+            "size": 24,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.79, 699.76, 191.28, 716.66]
+          },
+          {
+            "text": "older",
+            "object": 1,
+            "objects": 1,
+            "font": "CMR10",
+            "size": 12,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.34, 659.88, 97.68, 668.33]
+          }
+        ],
+        "blockers": [],
+        "content": "27b574035d2ad8984704a2b874e452931e62fae2f3b22781b2b9a8505b98dfe0",
+        "fonts": [
+          {
+            "name": "F1",
+            "subtype": "Type1",
+            "baseFont": "AAAAAA+CMR10",
+            "firstChar": 72,
+            "lastChar": 119,
+            "widths": [750, 361, 513, 777, 625, 916, 750, 777, 680, 777, 736, 555, 722, 750, 750, 1027, 750, 750, 611, 277, 500, 277, 500, 277, 277, 500, 555, 444, 555, 444, 305, 500, 555, 277, 305, 527, 277, 833, 555, 500, 555, 527, 391, 394, 388, 555, 527, 722],
+            "encoding": null,
+            "toUnicode": false,
+            "flags": 4,
+            "fontFile": "FontFile",
+            "programLength": 16309
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "Hello world",
+      "text": "Hello Kitty",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "Text updated. Verified: nothing else on this page changed.",
+          "details": ["This PDF contained only the letters it used from the font “CMR10”, so PaperKnife added a complete copy of that font from its own fonts for the new text. The rest of the document still uses the PDF's own font."],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": {
+            "text": "Hello Kitty",
+            "object": 0,
+            "objects": 1,
+            "font": "CMR10",
+            "size": 24,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.79, 695.1, 190.06, 716.66]
+          }
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Hello Kitty",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "CMR10",
+                  "size": 24,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.79, 695.1, 190.06, 716.66]
+                },
+                {
+                  "text": "older",
+                  "object": 1,
+                  "objects": 1,
+                  "font": "CMR10",
+                  "size": 12,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.34, 659.88, 97.68, 668.33]
+                }
+              ],
+              "blockers": [],
+              "content": "3040dc3c1f21c8094a582bd5e124c32f29f06e3ee207aac4a5fd3750b17895f5",
+              "fonts": [
+                {
+                  "name": "F1",
+                  "subtype": "Type1",
+                  "baseFont": "AAAAAA+CMR10",
+                  "firstChar": 72,
+                  "lastChar": 119,
+                  "widths": [750, 361, 513, 777, 625, 916, 750, 777, 680, 777, 736, 555, 722, 750, 750, 1027, 750, 750, 611, 277, 500, 277, 500, 277, 277, 500, 555, 444, 555, 444, 305, 500, 555, 277, 305, 527, 277, 833, 555, 500, 555, 527, 391, 394, 388, 555, 527, 722],
+                  "encoding": null,
+                  "toUnicode": false,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 16309
+                },
+                {
+                  "name": "PKCMR10",
+                  "subtype": "Type1",
+                  "baseFont": "PKAAAF+CMR10",
+                  "firstChar": 0,
+                  "lastChar": 196,
+                  "widths": [625, 833, 777, 694, 666, 750, 722, 777, 722, 777, 722, 583, 555, 555, 833, 833, 277, 305, 500, 500, 500, 500, 500, 750, 444, 500, 722, 777, 500, 902, 1013, 777, 277, 277, 500, 833, 500, 833, 777, 277, 388, 388, 500, 777, 277, 333, 277, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 277, 277, 277, 777, 472, 472, 777, 750, 708, 722, 763, 680, 652, 784, 750, 361, 513, 777, 625, 916, 750, 777, 680, 777, 736, 555, 722, 750, 750, 1027, 750, 750, 611, 277, 500, 277, 500, 277, 277, 500, 555, 444, 555, 444, 305, 500, 555, 277, 305, 527, 277, 833, 555, 500, 555, 527, 391, 394, 388, 555, 527, 722, 527, 527, 444, 500, 1000, 500, 500, 500, 277, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 333, 625, 833, 777, 694, 666, 750, 722, 777, 722, 777, 166, 333, 722, 583, 555, 555, 833, 833, 277, 305, 500, 500, 500, 500, 500, 750, 444, 500, 722, 777, 500, 902, 1013, 777, 277, 500],
+                  "encoding": null,
+                  "toUnicode": false,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 35732
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "older",
+      "text": "folder",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "Text updated. Verified: nothing else on this page changed.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": {
+            "text": "folder",
+            "object": 1,
+            "objects": 1,
+            "font": "CMR10",
+            "size": 12,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.4, 659.88, 101.34, 668.46]
+          }
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Hello Kitty",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "CMR10",
+                  "size": 24,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.79, 695.1, 190.06, 716.66]
+                },
+                {
+                  "text": "folder",
+                  "object": 1,
+                  "objects": 1,
+                  "font": "CMR10",
+                  "size": 12,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.4, 659.88, 101.34, 668.46]
+                }
+              ],
+              "blockers": [],
+              "content": "613038dcc00a96e9d5fe0bd0159a37fe1aa541a6a9c2b03d202e5aaccdbe8f32",
+              "fonts": [
+                {
+                  "name": "F1",
+                  "subtype": "Type1",
+                  "baseFont": "AAAAAA+CMR10",
+                  "firstChar": 72,
+                  "lastChar": 119,
+                  "widths": [750, 361, 513, 777, 625, 916, 750, 777, 680, 777, 736, 555, 722, 750, 750, 1027, 750, 750, 611, 277, 500, 277, 500, 277, 277, 500, 555, 444, 555, 444, 305, 500, 555, 277, 305, 527, 277, 833, 555, 500, 555, 527, 391, 394, 388, 555, 527, 722],
+                  "encoding": null,
+                  "toUnicode": false,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 16309
+                },
+                {
+                  "name": "PKCMR10",
+                  "subtype": "Type1",
+                  "baseFont": "PKAAAF+CMR10",
+                  "firstChar": 0,
+                  "lastChar": 196,
+                  "widths": [625, 833, 777, 694, 666, 750, 722, 777, 722, 777, 722, 583, 555, 555, 833, 833, 277, 305, 500, 500, 500, 500, 500, 750, 444, 500, 722, 777, 500, 902, 1013, 777, 277, 277, 500, 833, 500, 833, 777, 277, 388, 388, 500, 777, 277, 333, 277, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 277, 277, 277, 777, 472, 472, 777, 750, 708, 722, 763, 680, 652, 784, 750, 361, 513, 777, 625, 916, 750, 777, 680, 777, 736, 555, 722, 750, 750, 1027, 750, 750, 611, 277, 500, 277, 500, 277, 277, 500, 555, 444, 555, 444, 305, 500, 555, 277, 305, 527, 277, 833, 555, 500, 555, 527, 391, 394, 388, 555, 527, 722, 527, 527, 444, 500, 1000, 500, 500, 500, 277, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 333, 625, 833, 777, 694, 666, 750, 722, 777, 722, 777, 166, 333, 722, 583, 555, 555, 833, 833, 277, 305, 500, 500, 500, 500, 500, 750, 444, 500, 722, 777, 500, 902, 1013, 777, 277, 500],
+                  "encoding": null,
+                  "toUnicode": false,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 35732
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

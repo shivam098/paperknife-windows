@@ -3,3 +3,5 @@
 *.pfb binary
 *.png binary
 *.ico binary
+*.content -text diff
+*.ttf binary

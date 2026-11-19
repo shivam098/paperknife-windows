@@ -1,0 +1,167 @@
+{
+  "format": 1,
+  "id": "runs-edit-changed-characters-only",
+  "title": "Changing the last digit of a letter-by-letter line rewrites only that character: the line keeps its 12 objects and the next cell stays where it was.",
+  "guards": "Edits of letter-by-letter lines must change the fewest objects, leaving the rest of the page exactly as it was (v0.1.1).",
+  "document": "documents/e38797bb5876.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Invoice 2024",
+            "object": 0,
+            "objects": 12,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [73.12, 699.87, 139.46, 708.63]
+          },
+          {
+            "text": "$1,250.00",
+            "object": 12,
+            "objects": 9,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [400.43, 698.31, 452.8, 709.38]
+          },
+          {
+            "text": "Total due",
+            "object": 21,
+            "objects": 9,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.28, 649.87, 121.54, 658.59]
+          }
+        ],
+        "blockers": [],
+        "content": "409f7749c08b3151e52133aa88366c48eecb5b3493a7c0e5a554bc80a7a497c1",
+        "fonts": [
+          {
+            "name": "FXF1",
+            "subtype": "Type1",
+            "baseFont": "Helvetica",
+            "firstChar": null,
+            "lastChar": null,
+            "widths": null,
+            "encoding": "WinAnsiEncoding",
+            "toUnicode": false,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "Invoice 2024",
+      "text": "Invoice 2025",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "Text updated. Verified: nothing else on this page changed.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": {
+            "text": "Invoice 2025",
+            "object": 0,
+            "objects": 12,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [73.12, 699.87, 139.56, 708.63]
+          }
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Invoice 2025",
+                  "object": 0,
+                  "objects": 12,
+                  "font": "Helvetica",
+                  "size": 12,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [73.12, 699.87, 139.56, 708.63]
+                },
+                {
+                  "text": "$1,250.00",
+                  "object": 12,
+                  "objects": 9,
+                  "font": "Helvetica",
+                  "size": 12,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [400.43, 698.31, 452.8, 709.38]
+                },
+                {
+                  "text": "Total due",
+                  "object": 21,
+                  "objects": 9,
+                  "font": "Helvetica",
+                  "size": 12,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.28, 649.87, 121.54, 658.59]
+                }
+              ],
+              "blockers": [],
+              "content": "41ae09afd3bc4ca46af966fca48cc557e8009a9e70d85a0f69b5acce9d2f577b",
+              "fonts": [
+                {
+                  "name": "FXF1",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": null,
+                  "lastChar": null,
+                  "widths": null,
+                  "encoding": "WinAnsiEncoding",
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

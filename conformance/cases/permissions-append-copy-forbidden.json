@@ -1,0 +1,113 @@
+{
+  "format": 1,
+  "id": "permissions-append-copy-forbidden",
+  "title": "Appending the page of an encrypted PDF whose author forbids copying is refused.",
+  "guards": "Pages must not be copied out of a document whose author forbids copying (v0.1.0).",
+  "document": "documents/32a4377b16a1.pdf",
+  "attachments": {
+    "restricted": "documents/5239cd3fd1d2.pdf"
+  },
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Page 1",
+            "object": 0,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 24,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [73.85, 694.98, 143.66, 717.26]
+          }
+        ],
+        "blockers": [],
+        "content": "7aedcc514f1ea2c13bef5aab703cbf8ecfadc097872ef38c81f905bae058b7c8",
+        "fonts": [
+          {
+            "name": "FXF1",
+            "subtype": "Type1",
+            "baseFont": "Helvetica",
+            "firstChar": null,
+            "lastChar": null,
+            "widths": null,
+            "encoding": "WinAnsiEncoding",
+            "toUnicode": false,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "appendDocument",
+      "document": "restricted",
+      "expect": {
+        "result": {
+          "status": "Rejected",
+          "rejection": "EditingRestricted",
+          "message": "The author of that PDF restricted copying its pages.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": null
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": false,
+          "canUndo": false,
+          "canRedo": false,
+          "sameAs": 0,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Page 1",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 24,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [73.85, 694.98, 143.66, 717.26]
+                }
+              ],
+              "blockers": [],
+              "content": "7aedcc514f1ea2c13bef5aab703cbf8ecfadc097872ef38c81f905bae058b7c8",
+              "fonts": [
+                {
+                  "name": "FXF1",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": null,
+                  "lastChar": null,
+                  "widths": null,
+                  "encoding": "WinAnsiEncoding",
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "format": 1,
+  "id": "tex-quotation-mark-code-unshipped-font-content-stream",
+  "title": "The edit of tex-quotation-mark-code-content-stream in a font PaperKnife doesn't ship is refused, naming ł.",
+  "guards": "In fonts PaperKnife doesn't ship, a character the PDF never uses could be drawn as another symbol, such as a quotation mark for ł; it must be refused (v0.5.0).",
+  "document": "documents/aa9275f6edf5.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Hello",
+            "object": 0,
+            "objects": 1,
+            "font": "SFZZ1000",
+            "size": 24,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.79, 699.78, 125.23, 716.68]
+          }
+        ],
+        "blockers": [],
+        "content": "b512030664f5894d946517d35bb9b17b42229ddef5f88f257d9d08a4b8fc9a5e",
+        "fonts": [
+          {
+            "name": "F1",
+            "subtype": "Type1",
+            "baseFont": "AAAAAA+SFZZ1000",
+            "firstChar": 72,
+            "lastChar": 170,
+            "widths": [749.8169, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 444.3333, 0, 0, 0, 0, 0, 0, 277.71, 0, 0, 499.878, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 336],
+            "encoding": {
+              "base": null,
+              "differences": {
+                "72": "H",
+                "101": "e",
+                "108": "l",
+                "111": "o"
+              }
+            },
+            "toUnicode": true,
+            "flags": 4,
+            "fontFile": "FontFile",
+            "programLength": 21276
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "Hello",
+      "text": "Hełlo",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Rejected",
+          "rejection": "UnsupportedCharacters",
+          "message": "The font “SFZZ1000” in this PDF doesn't contain: ł",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": ["ł"],
+          "run": null
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": false,
+          "canUndo": false,
+          "canRedo": false,
+          "sameAs": 0,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Hello",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "SFZZ1000",
+                  "size": 24,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.79, 699.78, 125.23, 716.68]
+                }
+              ],
+              "blockers": [],
+              "content": "b512030664f5894d946517d35bb9b17b42229ddef5f88f257d9d08a4b8fc9a5e",
+              "fonts": [
+                {
+                  "name": "F1",
+                  "subtype": "Type1",
+                  "baseFont": "AAAAAA+SFZZ1000",
+                  "firstChar": 72,
+                  "lastChar": 170,
+                  "widths": [749.8169, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 444.3333, 0, 0, 0, 0, 0, 0, 277.71, 0, 0, 499.878, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 336],
+                  "encoding": {
+                    "base": null,
+                    "differences": {
+                      "72": "H",
+                      "101": "e",
+                      "108": "l",
+                      "111": "o"
+                    }
+                  },
+                  "toUnicode": true,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 21276
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

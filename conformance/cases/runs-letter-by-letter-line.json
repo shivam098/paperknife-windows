@@ -1,0 +1,228 @@
+{
+  "format": 1,
+  "id": "runs-letter-by-letter-line",
+  "title": "Shortening one letter-by-letter line, then changing a word of another near the page's right edge.",
+  "guards": "Clicking such a line selected one character, not the line (PDFs made from web pages by wkhtmltopdf, v0.1.1).",
+  "document": "documents/f4a0375d90c5.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Total due",
+            "object": 0,
+            "objects": 9,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [540.28, 699.87, 589.54, 708.59]
+          },
+          {
+            "text": "Room Rent Capping",
+            "object": 9,
+            "objects": 17,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.95, 657.49, 179.9, 668.74]
+          }
+        ],
+        "blockers": [],
+        "content": "65f075ab24b3476032652377bfba873d9b57cd0708d5b269a47b6dfeae10b8d4",
+        "fonts": [
+          {
+            "name": "FXF1",
+            "subtype": "Type1",
+            "baseFont": "Helvetica",
+            "firstChar": null,
+            "lastChar": null,
+            "widths": null,
+            "encoding": "WinAnsiEncoding",
+            "toUnicode": false,
+            "flags": null,
+            "fontFile": null,
+            "programLength": null
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "Room Rent Capping",
+      "text": "Room Rent",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "Text updated. Verified: nothing else on this page changed.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": {
+            "text": "Room Rent",
+            "object": 9,
+            "objects": 9,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.95, 659.87, 132.6, 668.59]
+          }
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Total due",
+                  "object": 0,
+                  "objects": 9,
+                  "font": "Helvetica",
+                  "size": 12,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [540.28, 699.87, 589.54, 708.59]
+                },
+                {
+                  "text": "Room Rent",
+                  "object": 9,
+                  "objects": 9,
+                  "font": "Helvetica",
+                  "size": 12,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.95, 659.87, 132.6, 668.59]
+                }
+              ],
+              "blockers": [],
+              "content": "27a600e2d8685d4decac173a00fb30fb25e3fc4814f7661c7c7208ad784c3d93",
+              "fonts": [
+                {
+                  "name": "FXF1",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": null,
+                  "lastChar": null,
+                  "widths": null,
+                  "encoding": "WinAnsiEncoding",
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "Total due",
+      "text": "Total paid",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "Text updated. Verified: nothing else on this page changed.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": {
+            "text": "Total paid",
+            "object": 0,
+            "objects": 7,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [540.28, 697.62, 591.83, 708.59]
+          }
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Total paid",
+                  "object": 0,
+                  "objects": 7,
+                  "font": "Helvetica",
+                  "size": 12,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [540.28, 697.62, 591.83, 708.59]
+                },
+                {
+                  "text": "Room Rent",
+                  "object": 7,
+                  "objects": 9,
+                  "font": "Helvetica",
+                  "size": 12,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.95, 659.87, 132.6, 668.59]
+                }
+              ],
+              "blockers": [],
+              "content": "9b386f2df154b264ce67c34a2897f10f9ee2618c2dc4f90aa09cb1c26bd81a7b",
+              "fonts": [
+                {
+                  "name": "FXF1",
+                  "subtype": "Type1",
+                  "baseFont": "Helvetica",
+                  "firstChar": null,
+                  "lastChar": null,
+                  "widths": null,
+                  "encoding": "WinAnsiEncoding",
+                  "toUnicode": false,
+                  "flags": null,
+                  "fontFile": null,
+                  "programLength": null
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "format": 1,
+  "id": "permissions-rotate-revision-2",
+  "title": "Rotating a page of an encrypted PDF (security handler revision 2) that forbids changes is refused.",
+  "guards": "The permission to assemble pages has a meaning only from revision 3; before it, rotating a page is one of the forbidden changes (v0.1.0).",
+  "document": "documents/5a36b4f94d63.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Hello World",
+            "object": 0,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 24,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [73.92, 699.74, 194.28, 717.18]
+          },
+          {
+            "text": "This line must not move",
+            "object": 1,
+            "objects": 1,
+            "font": "Helvetica",
+            "size": 12,
+            "embedded": false,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.28, 659.87, 198.22, 668.59]
+          }
+        ],
+        "blockers": ["The author of this PDF restricted editing."],
+        "content": null,
+        "fonts": null
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "rotatePage",
+      "page": 0,
+      "quarterTurns": 1,
+      "expect": {
+        "result": {
+          "status": "Rejected",
+          "rejection": "EditingRestricted",
+          "message": "The author of this PDF restricted changes to its pages.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": null
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": false,
+          "canUndo": false,
+          "canRedo": false,
+          "sameAs": 0,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Hello World",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 24,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [73.92, 699.74, 194.28, 717.18]
+                },
+                {
+                  "text": "This line must not move",
+                  "object": 1,
+                  "objects": 1,
+                  "font": "Helvetica",
+                  "size": 12,
+                  "embedded": false,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.28, 659.87, 198.22, 668.59]
+                }
+              ],
+              "blockers": ["The author of this PDF restricted editing."],
+              "content": null,
+              "fonts": null
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

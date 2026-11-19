@@ -1,0 +1,343 @@
+{
+  "format": 1,
+  "id": "tex-pdfium-rewrite-only-removes",
+  "title": "With PDFium's page rewrite, text in a TeX font can only be removed: the edits of tex-pdfium-rewrite-only-removes-old, -o and -delete in one session, with an undo before the last.",
+  "guards": "PDFium re-encodes the edited object's text and may pick a code that draws another glyph in TeX fonts (v0.5.0).",
+  "document": "documents/55bbbaf3ac7b.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Hello",
+            "object": 0,
+            "objects": 1,
+            "font": "CMR10",
+            "size": 24,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.79, 699.76, 125.26, 716.66]
+          },
+          {
+            "text": "older",
+            "object": 1,
+            "objects": 2,
+            "font": "CMR10",
+            "size": 12,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.34, 659.88, 97.68, 668.33]
+          }
+        ],
+        "blockers": [],
+        "content": "02f599d0862677e195d438c1650a2f194d3a3dbf19a0fab4f427213ba5fa9b16",
+        "fonts": [
+          {
+            "name": "F1",
+            "subtype": "Type1",
+            "baseFont": "AAAAAA+CMR10",
+            "firstChar": 72,
+            "lastChar": 119,
+            "widths": [750, 361, 513, 777, 625, 916, 750, 777, 680, 777, 736, 555, 722, 750, 750, 1027, 750, 750, 611, 277, 500, 277, 500, 277, 277, 500, 555, 444, 555, 444, 305, 500, 555, 277, 305, 527, 277, 833, 555, 500, 555, 527, 391, 394, 388, 555, 527, 722],
+            "encoding": null,
+            "toUnicode": false,
+            "flags": 4,
+            "fontFile": "FontFile",
+            "programLength": 16309
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "older",
+      "text": "old",
+      "contentEditing": false,
+      "expect": {
+        "result": {
+          "status": "Rejected",
+          "rejection": "PageNotEditable",
+          "message": "PaperKnife can change text in the font “CMR10” only by editing the page's drawing instructions directly, which it can't do on this page (for example because the PDF is encrypted). It can still delete the whole line.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": null
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": false,
+          "canUndo": false,
+          "canRedo": false,
+          "sameAs": 0,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Hello",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "CMR10",
+                  "size": 24,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.79, 699.76, 125.26, 716.66]
+                },
+                {
+                  "text": "older",
+                  "object": 1,
+                  "objects": 2,
+                  "font": "CMR10",
+                  "size": 12,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.34, 659.88, 97.68, 668.33]
+                }
+              ],
+              "blockers": [],
+              "content": "02f599d0862677e195d438c1650a2f194d3a3dbf19a0fab4f427213ba5fa9b16",
+              "fonts": [
+                {
+                  "name": "F1",
+                  "subtype": "Type1",
+                  "baseFont": "AAAAAA+CMR10",
+                  "firstChar": 72,
+                  "lastChar": 119,
+                  "widths": [750, 361, 513, 777, 625, 916, 750, 777, 680, 777, 736, 555, 722, 750, 750, 1027, 750, 750, 611, 277, 500, 277, 500, 277, 277, 500, 555, 444, 555, 444, 305, 500, 555, 277, 305, 527, 277, 833, 555, 500, 555, 527, 391, 394, 388, 555, 527, 722],
+                  "encoding": null,
+                  "toUnicode": false,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 16309
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "older",
+      "text": "o",
+      "contentEditing": false,
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "Text updated. Verified: nothing else on this page changed.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": {
+            "text": "o",
+            "object": 1,
+            "objects": 1,
+            "font": "CMR10",
+            "size": 12,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.34, 659.88, 77.65, 665.38]
+          }
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": false,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Hello",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "CMR10",
+                  "size": 24,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.79, 699.76, 125.26, 716.66]
+                },
+                {
+                  "text": "o",
+                  "object": 1,
+                  "objects": 1,
+                  "font": "CMR10",
+                  "size": 12,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.34, 659.88, 77.65, 665.38]
+                }
+              ],
+              "blockers": [],
+              "content": "49f41ba4d7e7c1f79a733f5d51558d38ccb3f28bd4b0874d729f7685dc1d73cd",
+              "fonts": [
+                {
+                  "name": "FXF1",
+                  "subtype": "Type1",
+                  "baseFont": "AAAAAA+CMR10",
+                  "firstChar": 72,
+                  "lastChar": 119,
+                  "widths": [750, 361, 513, 777, 625, 916, 750, 777, 680, 777, 736, 555, 722, 750, 750, 1027, 750, 750, 611, 277, 500, 277, 500, 277, 277, 500, 555, 444, 555, 444, 305, 500, 555, 277, 305, 527, 277, 833, 555, 500, 555, 527, 391, 394, 388, 555, 527, 722],
+                  "encoding": null,
+                  "toUnicode": false,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 16309
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "action": "undo",
+      "expect": {
+        "result": {
+          "done": true
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": false,
+          "canUndo": false,
+          "canRedo": true,
+          "sameAs": 0,
+          "appended": false,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Hello",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "CMR10",
+                  "size": 24,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.79, 699.76, 125.26, 716.66]
+                },
+                {
+                  "text": "older",
+                  "object": 1,
+                  "objects": 2,
+                  "font": "CMR10",
+                  "size": 12,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.34, 659.88, 97.68, 668.33]
+                }
+              ],
+              "blockers": [],
+              "content": "02f599d0862677e195d438c1650a2f194d3a3dbf19a0fab4f427213ba5fa9b16",
+              "fonts": [
+                {
+                  "name": "F1",
+                  "subtype": "Type1",
+                  "baseFont": "AAAAAA+CMR10",
+                  "firstChar": 72,
+                  "lastChar": 119,
+                  "widths": [750, 361, 513, 777, 625, 916, 750, 777, 680, 777, 736, 555, 722, 750, 750, 1027, 750, 750, 611, 277, 500, 277, 500, 277, 277, 500, 555, 444, 555, 444, 305, 500, 555, 277, 305, 527, 277, 833, 555, 500, 555, 527, 391, 394, 388, 555, 527, 722],
+                  "encoding": null,
+                  "toUnicode": false,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 16309
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "older",
+      "text": "",
+      "contentEditing": false,
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "Text deleted. Verified: nothing else on this page changed.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": null
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": false,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Hello",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "CMR10",
+                  "size": 24,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.79, 699.76, 125.26, 716.66]
+                }
+              ],
+              "blockers": [],
+              "content": "9aa6136841db75436235f0c610e70295983b0f374ec86d8fc9f3f0d0fc20c3c5",
+              "fonts": [
+                {
+                  "name": "FXF1",
+                  "subtype": "Type1",
+                  "baseFont": "AAAAAA+CMR10",
+                  "firstChar": 72,
+                  "lastChar": 119,
+                  "widths": [750, 361, 513, 777, 625, 916, 750, 777, 680, 777, 736, 555, 722, 750, 750, 1027, 750, 750, 611, 277, 500, 277, 500, 277, 277, 500, 555, 444, 555, 444, 305, 500, 555, 277, 305, 527, 277, 833, 555, 500, 555, 527, 391, 394, 388, 555, 527, 722],
+                  "encoding": null,
+                  "toUnicode": false,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 16309
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+{
+  "format": 1,
+  "id": "tex-ligatures-and-kerning-without-character-map",
+  "title": "Extending “Word file”, set with an fi ligature and kerning in a font without a character map, keeps the ligature and the kerning.",
+  "guards": "Without a ToUnicode map, codes must be read through the font's built-in encoding as PDFium reads them, ligatures included, and unchanged text must keep its kerning (v0.3.0).",
+  "document": "documents/3469c4e701af.pdf",
+  "initial": {
+    "pageCount": 1,
+    "modified": false,
+    "canUndo": false,
+    "canRedo": false,
+    "pages": [
+      {
+        "width": 612,
+        "height": 792,
+        "runs": [
+          {
+            "text": "Word file",
+            "object": 0,
+            "objects": 1,
+            "font": "CMR10",
+            "size": 24,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.43, 699.5, 167.35, 716.92]
+          }
+        ],
+        "blockers": [],
+        "content": "fadee4d088cb016b46552fea3394072f47e746d1f97b6259a7145bf2ad31c259",
+        "fonts": [
+          {
+            "name": "F1",
+            "subtype": "Type1",
+            "baseFont": "AAAAAA+CMR10",
+            "firstChar": 12,
+            "lastChar": 115,
+            "widths": [555, 555, 833, 833, 277, 305, 500, 500, 500, 500, 500, 750, 444, 500, 722, 777, 500, 902, 1013, 777, 277, 277, 500, 833, 500, 833, 777, 277, 388, 388, 500, 777, 277, 333, 277, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 277, 277, 277, 777, 472, 472, 777, 750, 708, 722, 763, 680, 652, 784, 750, 361, 513, 777, 625, 916, 750, 777, 680, 777, 736, 555, 722, 750, 750, 1027, 750, 750, 611, 277, 500, 277, 500, 277, 277, 500, 555, 444, 555, 444, 305, 500, 555, 277, 305, 527, 277, 833, 555, 500, 555, 527, 391, 394],
+            "encoding": null,
+            "toUnicode": false,
+            "flags": 4,
+            "fontFile": "FontFile",
+            "programLength": 16432
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "action": "replaceText",
+      "page": 0,
+      "run": "Word file",
+      "text": "Word files",
+      "contentEditing": true,
+      "expect": {
+        "result": {
+          "status": "Applied",
+          "rejection": "None",
+          "message": "Text updated. Verified: nothing else on this page changed.",
+          "details": [],
+          "warnings": [],
+          "unsupportedCharacters": [],
+          "run": {
+            "text": "Word files",
+            "object": 0,
+            "objects": 1,
+            "font": "CMR10",
+            "size": 24,
+            "embedded": true,
+            "subset": false,
+            "invisible": false,
+            "bounds": [72.43, 699.5, 176.69, 716.92]
+          }
+        },
+        "state": {
+          "pageCount": 1,
+          "modified": true,
+          "canUndo": true,
+          "canRedo": false,
+          "sameAs": null,
+          "appended": true,
+          "pages": [
+            {
+              "width": 612,
+              "height": 792,
+              "runs": [
+                {
+                  "text": "Word files",
+                  "object": 0,
+                  "objects": 1,
+                  "font": "CMR10",
+                  "size": 24,
+                  "embedded": true,
+                  "subset": false,
+                  "invisible": false,
+                  "bounds": [72.43, 699.5, 176.69, 716.92]
+                }
+              ],
+              "blockers": [],
+              "content": "5cae7b7dbf3d2af8374091d3e6f226870c388d7f5170724b5fc8b148598427e4",
+              "fonts": [
+                {
+                  "name": "F1",
+                  "subtype": "Type1",
+                  "baseFont": "AAAAAA+CMR10",
+                  "firstChar": 12,
+                  "lastChar": 115,
+                  "widths": [555, 555, 833, 833, 277, 305, 500, 500, 500, 500, 500, 750, 444, 500, 722, 777, 500, 902, 1013, 777, 277, 277, 500, 833, 500, 833, 777, 277, 388, 388, 500, 777, 277, 333, 277, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 277, 277, 277, 777, 472, 472, 777, 750, 708, 722, 763, 680, 652, 784, 750, 361, 513, 777, 625, 916, 750, 777, 680, 777, 736, 555, 722, 750, 750, 1027, 750, 750, 611, 277, 500, 277, 500, 277, 277, 500, 555, 444, 555, 444, 305, 500, 555, 277, 305, 527, 277, 833, 555, 500, 555, 527, 391, 394],
+                  "encoding": null,
+                  "toUnicode": false,
+                  "flags": 4,
+                  "fontFile": "FontFile",
+                  "programLength": 16432
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
